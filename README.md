@@ -1,64 +1,127 @@
-# AI Clinic Lead Management Dashboard
+# HR Corporate Risk Assessment + Clinical Body Assessment Platform
 
-This application is a specialized platform for wellness clinics to manage patient leads, automate intake analysis, and streamline the conversion process using AI.
-
-## 🚀 Core Functionalities
-
-### 1. AI-Powered Patient Intake
-- **Automatic Summarization**: Uses Gemini AI to analyze raw intake form data and provide a concise "Intake Summary" for clinicians.
-- **Sentiment & Intent Analysis**: Categorizes leads into High, Medium, or Low intent based on their responses.
-- **Suggested Tracks**: The AI recommends specific follow-up programs (e.g., "Weight Management", "Anti-Aging") based on patient interests.
-
-### 2. Intelligent Communication Sequences
-- **Dynamic Content Generation**: Generates personalized 3-day email and SMS sequences tailored to a patient's specific health goals.
-- **AI Subject Lines**: Dynamically generates engaging subject lines for each email in a sequence to maximize open rates.
-- **One-Click Regeneration**: Allows clinic staff to iterate on AI-generated content before sending.
-
-### 3. Automated Scheduling & Sync
-- **Google Calendar Integration**: Confirmed appointments are automatically synced to the provider's Google Calendar using OAuth2.
-- **Audit Trail**: Every booking sends a confirmation email and SMS simultaneously, logged in the patient's timeline.
-- **Accessibility**: Includes a Text-to-Speech (TTS) confirmation feature that reads out appointment details for verification.
-
-### 4. Smart Task Management
-- **Prioritization**: Tasks are automatically generated for clinicians (e.g., "Review High Intent lead").
-- **Sorting Logic**: Dashboard sections for pending and completed tasks allow sorting by Due Date or Patient Name for better organization.
-- **Visual Feedback**: Real-time animations (via Framer Motion) provide instant feedback when tasks are completed or updated.
+> **Assessments-HHRR-MSK** — A comprehensive dual-lens enterprise platform combining **Corporate HR Risk Modeling** with **Clinical Body Assessment** (MSK/Motion/Posture). Built on React + Vite + Express + Tailwind CSS with AI-powered analysis.
 
 ---
 
-## 🏗️ Architecture & Tech Stack
+## What This App Does
 
-- **Frontend**: React 18 with Vite.
-- **Styling**: Tailwind CSS for a modern, responsive interface.
-- **Animations**: Framer Motion for smooth transitions and interactive UI elements.
-- **AI Engine**: Google Gemini API (`@google/genai`) for text generation, analysis, and speech synthesis.
-- **Integration**: Google Calendar API for scheduling synchronization.
-- **State Management**: React Context API (`DemoContext`) for unified data flow across leads and tasks.
+### Corporate HR Risk Side (Admin/HR View)
+- **AI-Powered Risk Profiling**: Predictive attrition scoring using burnout, absenteeism, engagement, MSK risk, and financial risk data
+- **Employee Risk Deep Dive**: Individual employee profiles correlating clinical MSK data with workforce risk
+- **Enterprise Audit Dashboard**: Company-wide risk distribution, department breakdowns, and AI strategic recommendations
+- **Clinical Overview**: MSK heatmaps by body region, program enrollment tracking, assessment type breakdown
+- **Interventions Manager**: AI-recommended wellness programs with progress tracking
+- **Compliance Reporting**: GDPR Article 9 compliant health data processing, OSHA reports, regulatory documentation
+
+### Patient/Employee Clinical Side (User-Facing)
+- **MSK Risk Screen**: Interactive body map with pain/stiffness ratings per region, work risk factor assessment, activity limitations
+- **3D Motion Assessment**: Camera-based movement capture with AI skeleton analysis (squat, overhead reach, gait tests)
+- **Posture Analysis**: Photo-based posture evaluation with body alignment scoring and corrective exercise prescriptions
+- **Assessment Results**: Comprehensive clinical summaries with personalized recommendations
+- **Assessment History**: Complete tracking of all past assessments with trend analysis
 
 ---
 
-## 📈 How to Scale
+## Competitive Analysis
 
-To transition this application from a prototype to a production-scale healthcare platform, we recommend the following roadmap:
+### Direct Competitors
 
-### 1. Transition to a Persistent Backend
-Currently, the app uses a `DemoContext` with local state. To scale:
-- **Database**: Implement **Firebase Firestore** or a **PostgreSQL** database to persist patient records and clinician tasks.
-- **Authentication**: Integrate **Firebase Auth** or **Auth0** to provide secure, role-based access for clinic staff (Admins vs. Clinicians).
+| Competitor | Strengths | Weaknesses | Our Advantage |
+|---|---|---|---|
+| **Visier People** | Strong HR analytics, workforce planning | No clinical/MSK data, expensive enterprise pricing | Clinical body assessment + MSK risk correlation |
+| **Ultimate Kronos (UKG)** | Attendance, scheduling, HR core | No AI risk prediction, no body assessment | Unified clinical + risk data layer |
+| **HEAVENLY** (MSK Platform) | MSK clinical focus, exercise prescription | HR/risk blind, no enterprise reporting | Full-stack HR + clinical integration |
+| **KinetSense AI** | 3D motion capture technology | Standalone motion only, no HR risk | Motion capture WITH risk correlation |
+| **Spring Health** | Mental health + EAP | No MSK/body, different use case | Physical health + mental + financial risk |
+| **Hinge Health** | MSK coaching, wearable integration | Employer-only, no individual assessment app | User-facing patient app with QR access |
+| **Kaia Health** | Digital MSK treatment | Clinical only, no HR risk data | HR risk + clinical data in ONE platform |
+| **Sword Health** | MSK therapy | No predictive HR analytics | AI-driven attrition prediction from MSK data |
+| **Quantiful/Safetype** | AI workplace safety | General safety, not body assessment | Clinical body scan WITH risk profiling |
+| **Jifik/PhysiApp** | MSK physiotherapy | No AI, no enterprise reporting | AI analysis + predictive risk modeling |
+| **ErgoPlus** | Ergonomic assessment | Manual assessments, no AI | AI-powered 3D motion + ergonomic correlation |
+| **Occupational Health Platforms** (Cority, Enablon) | Compliance focus | Legacy systems, poor UX, no AI | Modern React UX + AI + clinical body scans |
 
-### 2. HIPAA Compliance & Security
-- **Data Encryption**: Ensure all Patient Health Information (PHI) is encrypted at rest and in transit.
-- **Audit Logs**: Implement strict logging of who accessed which patient record and when.
-- **BAA Agreements**: Ensure all third-party services (like Google Cloud or Firebase) have active Business Associate Agreements (BAA) for HIPAA compliance.
+### Key Differentiators
 
-### 3. Real-Time Collaboration
-- **WebSockets**: Use Socket.io or Firebase real-time listeners so multiple staff members can see lead updates or task completions instantly without refreshing.
-- **Push Notifications**: Integrate browser push notifications for "High Intent" leads to ensure immediate follow-up.
+1. **Only platform combining clinical body assessment (MSK/motion/posture) with HR predictive risk modeling**
+2. **MSK Risk Score as a direct predictor of turnover and burnout** — unique correlation not found in competitors
+3. **User-facing clinical assessment app** (patient QR-based flow) — competitors focus on employer-only dashboards
+4. **AI-powered clinical summaries** generated from physical assessment data
+5. **GDPR-compliant health data architecture** with explicit consent tracking
+6. **Modern React + Framer Motion UI** vs. legacy enterprise platforms
 
-### 4. Advanced AI Integration
-- **Voice Intake**: Allow patients to record their symptoms via audio and use Gemini to transcribe and analyze the audio directly.
-- **Predictive Analytics**: Analyze historical conversion data to predict which patients are most likely to book a consultation.
+---
 
-### 5. Multi-Clinic Support (SaaS Model)
-- **Multi-Tenancy**: Refactor the database schema to support multiple clinics, each with their own isolated data, providers, and settings.
-- **Whitelabeling**: Allow clinics to customize the branding of the landing pages and communication templates.
+## Technology Stack
+
+- **Frontend**: React 19 + Vite 6 + React Router 7 + Framer Motion 12
+- **Styling**: Tailwind CSS 4
+- **Backend**: Express.js + tsx
+- **AI**: Google Gemini 2.0 Flash (via @google/genai)
+- **State**: Zustand
+- **Icons**: Lucide React
+- **Email**: Resend
+- **SMS**: Twilio
+
+---
+
+## Getting Started
+
+```bash
+npm install
+npm run dev        # Start development server (port 3000)
+npm run build      # Production build to dist/
+```
+
+Set environment variables in `.env`:
+```
+RESEND_API_KEY=your_resend_key
+TWILIO_ACCOUNT_SID=your_twilio_sid
+TWILIO_AUTH_TOKEN=your_twilio_token
+TWILIO_PHONE_NUMBER=your_twilio_number
+GEMINI_API_KEY=your_gemini_key
+```
+
+---
+
+## User Roles
+
+| Role | Access |
+|---|---|
+| **Patient** | QR scan → Assessment app → Results |
+| **HR** | HR Dashboard, Employee Risk Profiles, Interventions |
+| **Management** | Enterprise Audit, Compliance Reports, All HR views |
+| **Admin** | Full system, user management, AI settings |
+
+---
+
+## Project Structure
+
+```
+src/
+├── App.tsx              # Main app with routing
+├── store/DemoContext.tsx # All state + mock data
+├── pages/
+│   ├── patient/          # User-facing assessment pages
+│   │   ├── AssessmentHub.tsx
+│   │   ├── MSKScreen.tsx
+│   │   ├── MotionCapture.tsx
+│   │   ├── PostureAnalysis.tsx
+│   │   ├── AssessmentResults.tsx
+│   │   └── AssessmentHistory.tsx
+│   ├── admin/           # Admin/HR pages
+│   │   ├── EmployeeRiskView.tsx
+│   │   ├── ClinicalOverview.tsx
+│   │   ├── Interventions.tsx
+│   │   ├── ComplianceReports.tsx
+│   │   └── EnterpriseAudit.tsx
+│   └── assessments/     # Staff audit pages
+server.ts                 # Express + Vite SSR server
+```
+
+---
+
+## License
+
+Proprietary — AI Dynamics / Hermes AI
