@@ -23,10 +23,28 @@ import { useDemo } from '../../store/DemoContext';
 export const EmployeeRiskView = () => {
   const { id } = useParams();
   const { employees, currentUser } = useDemo();
-  const employee = employees.find(e => e.id === id) || employees[0];
-  const { riskProfile } = employee;
 
+  // Access control — HR and Admin only
   const isHR = ['HR', 'Admin'].includes(currentUser?.role || '');
+  if (!isHR) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-500">
+        <p className="text-sm font-medium">Access restricted to HR and Admin only.</p>
+      </div>
+    );
+  }
+
+  const employee = employees.find(e => e.id === id);
+  if (!employee) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-slate-500 gap-3">
+        <AlertTriangle className="w-10 h-10 text-amber-400" />
+        <p className="text-sm font-medium">Employee not found.</p>
+      </div>
+    );
+  }
+
+  const { riskProfile } = employee;
 
   const riskScoreColor = (score: number) =>
     score < 30 ? 'text-emerald-600 bg-emerald-50' :
@@ -260,26 +278,33 @@ export const EmployeeRiskView = () => {
             </div>
           </div>
 
-          {/* Recommended Actions */}
+          {/* Recommended Actions — derived from actual risk scores */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
             <h3 className="font-bold text-slate-900 mb-4">Recommended Actions</h3>
             <div className="space-y-3">
-              {[
-                { action: 'Schedule ergonomic assessment', priority: 'High', color: 'red' },
-                { action: 'Refer to physical therapy', priority: 'High', color: 'red' },
-                { action: 'Schedule 1-on-1 wellness check-in', priority: 'Medium', color: 'amber' },
-                { action: 'Assign to light duty rotation', priority: 'Medium', color: 'amber' }
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                  <span className="text-sm font-medium text-slate-700">{item.action}</span>
-                  <span className={`text-[10px] font-black px-2 py-1 rounded-full ${
-                    item.color === 'red' ? 'bg-red-100 text-red-700' :
-                    item.color === 'amber' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
-                  }`}>
-                    {item.priority.toUpperCase()}
-                  </span>
-                </div>
-              ))}
+              {(() => {
+                const actions: { action: string; priority: 'High' | 'Medium' | 'Low'; color: 'red' | 'amber' | 'emerald' }[] = [];
+                if (riskProfile.mskRiskScore > 65) actions.push({ action: 'Ergonomic workstation assessment', priority: 'High', color: 'red' });
+                if (riskProfile.mskRiskScore > 65) actions.push({ action: 'Physical therapy referral', priority: 'High', color: 'red' });
+                if (riskProfile.burnoutScore > 65) actions.push({ action: 'Schedule wellness check-in', priority: 'High', color: 'red' });
+                if (riskProfile.burnoutScore > 40) actions.push({ action: 'Employee assistance program (EAP) referral', priority: 'Medium', color: 'amber' });
+                if (riskProfile.predictiveAttritionRisk > 65) actions.push({ action: 'Stay interview with manager', priority: 'High', color: 'red' });
+                if (riskProfile.predictiveAttritionRisk > 40) actions.push({ action: 'Career development conversation', priority: 'Medium', color: 'amber' });
+                if (riskProfile.absenteeismIndex > 20) actions.push({ action: 'Review attendance patterns', priority: 'Medium', color: 'amber' });
+                if (riskProfile.financialRiskScore > 60) actions.push({ action: 'Financial wellness consultation', priority: 'Medium', color: 'amber' });
+                if (actions.length === 0) actions.push({ action: 'Continue monitoring — no elevated risk flags', priority: 'Low', color: 'emerald' });
+                return actions.slice(0, 5).map((item, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                    <span className="text-sm font-medium text-slate-700">{item.action}</span>
+                    <span className={`text-[10px] font-black px-2 py-1 rounded-full ${
+                      item.color === 'red' ? 'bg-red-100 text-red-700' :
+                      item.color === 'amber' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {item.priority.toUpperCase()}
+                    </span>
+                  </div>
+                ));
+              })}
             </div>
           </div>
         </div>
