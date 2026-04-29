@@ -1,0 +1,5 @@
+{
+  "name": "Clinic Patient Journey Demo",
+  "description": "Interactive demo showing how a patient moves from QR scan to consultation scheduling.",
+  "requestFramePermissions": ["microphone"]
+}
