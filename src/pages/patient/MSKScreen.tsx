@@ -109,7 +109,7 @@ export const MSKScreen = () => {
 
   // ── Computed ──
   const riskScore = useMemo(() => {
-    const regions = Object.values(regionData);
+    const regions = Object.values(regionData) as { painLevel: number; stiffness: number; limitedMotion: boolean; notes: string }[];
     if (regions.length === 0) return 0;
     const avgPain       = regions.reduce((a, r) => a + r.painLevel, 0) / regions.length;
     const limitedCount  = regions.filter(r => r.limitedMotion).length;
@@ -119,7 +119,7 @@ export const MSKScreen = () => {
   }, [regionData, workFactors]);
 
   const riskLevel = useMemo(() => getRiskLevel(riskScore), [riskScore]);
-  const activeRegionCount = Object.values(regionData).filter(r => r.painLevel > 0).length;
+  const activeRegionCount = (Object.values(regionData) as { painLevel: number; stiffness: number; limitedMotion: boolean; notes: string }[]).filter(r => r.painLevel > 0).length;
 
   // ── Handlers ──
   const handleRegionClick = useCallback((regionId: RegionId) => {
@@ -165,7 +165,7 @@ export const MSKScreen = () => {
     const id = `msk-${Date.now()}`;
     const now = new Date().toISOString();
 
-    const mskRegions: MSKRegion[] = Object.entries(regionData).map(([name, data]) => ({
+    const mskRegions: MSKRegion[] = (Object.entries(regionData) as [string, { painLevel: number; stiffness: number; limitedMotion: boolean; notes: string }][]).map(([name, data]) => ({
       name,
       painLevel: data.painLevel,
       stiffness: data.stiffness,
@@ -543,7 +543,7 @@ export const MSKScreen = () => {
                   {/* Selected regions chips */}
                   {activeRegionCount > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {Object.entries(regionData)
+                      {(Object.entries(regionData) as [string, { painLevel: number; stiffness: number; limitedMotion: boolean; notes: string }][])
                         .filter(([_, r]) => r.painLevel > 0)
                         .map(([region, data]) => (
                           <button

@@ -1,15 +1,16 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Patient, mockPatients, Task, mockTasks, EmployeeRiskProfile, mockEmployeeRisks } from '../data/mockData';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 export type UserRole = 'Patient' | 'Staff' | 'HR' | 'Management' | 'Admin';
+
+const API_BASE = 'http://localhost:3000/api';
 
 // ─────────────────────────────────────────
 // Clinical Assessment Types
 // ─────────────────────────────────────────
 export interface MSKRegion {
   name: string;
-  painLevel: number; // 0-10
-  stiffness: number; // 0-10
+  painLevel: number;
+  stiffness: number;
   limitedMotion: boolean;
   notes?: string;
 }
@@ -19,7 +20,7 @@ export interface MSKAssessment {
   employeeId: string;
   assessmentDate: string;
   regions: MSKRegion[];
-  totalRiskScore: number; // 0-100
+  totalRiskScore: number;
   riskLevel: 'Low' | 'Moderate' | 'High' | 'Critical';
   workRiskFactors: string[];
   activityLimitations: string[];
@@ -40,14 +41,14 @@ export interface PostureAnalysis {
   employeeId: string;
   assessmentDate: string;
   photos: PosturePhoto[];
-  headTilt: number; // degrees deviation
-  shoulderImbalance: number; // cm difference
-  pelvicTilt: number; // degrees
-  spinalAlignment: string; // 'Normal' | 'MildDeviation' | 'SignificantDeviation'
-  riskZones: string[]; // ['neck', 'shoulders', 'lower_back']
+  headTilt: number;
+  shoulderImbalance: number;
+  pelvicTilt: number;
+  spinalAlignment: string;
+  riskZones: string[];
   aiAnalysis: string;
   correctiveExercises: string[];
-  overallPostureScore: number; // 0-100
+  overallPostureScore: number;
 }
 
 export interface MotionCaptureSession {
@@ -56,7 +57,7 @@ export interface MotionCaptureSession {
   assessmentDate: string;
   movementTests: {
     name: string;
-    symmetryScore: number; // 0-100
+    symmetryScore: number;
     romDegrees: number;
     compensations: string[];
   }[];
@@ -81,22 +82,19 @@ export interface ClinicalAssessment {
   status: 'pending' | 'in_progress' | 'completed' | 'reviewed';
 }
 
-// ─────────────────────────────────────────
-// Risk Profile Types
-// ─────────────────────────────────────────
 export interface RiskProfile {
   id: string;
   employeeId: string;
   lastUpdated: string;
   turnoverRisk: 'Low' | 'Medium' | 'High' | 'Critical';
-  burnoutScore: number; // 0-100
-  absenteeismIndex: number; // 0-100
-  engagementScore: number; // 0-100
-  mskRiskScore: number; // 0-100 (NEW - from clinical data)
-  financialRiskScore: number; // 0-100
+  burnoutScore: number;
+  absenteeismIndex: number;
+  engagementScore: number;
+  mskRiskScore: number;
+  financialRiskScore: number;
   complianceStatus: 'Compliant' | 'AtRisk' | 'NonCompliant';
   aiInsights: string[];
-  predictiveAttritionRisk: number; // 0-100 probability
+  predictiveAttritionRisk: number;
 }
 
 export interface Employee {
@@ -111,7 +109,13 @@ export interface Employee {
   clinicalAssessment?: ClinicalAssessment;
   bodyScanData?: any;
   lastAssessmentDate?: string;
-  overallHealthScore: number; // 0-100
+  overallHealthScore: number;
+  // HR Risks data
+  turnover_risk?: string;
+  motivation_level?: number;
+  performance_score?: number;
+  sick_days?: number;
+  notes?: string;
 }
 
 export interface AppUser {
@@ -122,250 +126,71 @@ export interface AppUser {
   employeeId?: string;
 }
 
-// ─────────────────────────────────────────
-// Mock Data
-// ─────────────────────────────────────────
-const mockEmployees: Employee[] = [
-  {
-    id: 'emp-1',
-    name: 'Robert Wilson',
-    email: 'rwilson@company.com',
-    department: 'Operations',
-    position: 'Front Desk Lead',
-    hireDate: '2022-03-15',
-    riskProfile: {
-      id: 'rp-1',
-      employeeId: 'emp-1',
-      lastUpdated: new Date(Date.now() - 86400000 * 5).toISOString(),
-      turnoverRisk: 'High',
-      burnoutScore: 78,
-      absenteeismIndex: 65,
-      engagementScore: 42,
-      mskRiskScore: 72, // HIGH MSK risk - correlation with back pain
-      financialRiskScore: 55,
-      complianceStatus: 'Compliant',
-      aiInsights: [
-        'High burnout due to frequent double shifts',
-        'MSK risk elevated - possible lower back issues',
-        'Motivation dropped 30% since departmental restructuring'
-      ],
-      predictiveAttritionRisk: 82
-    },
-    clinicalAssessment: {
-      id: 'ca-1',
-      employeeId: 'emp-1',
-      assessmentDate: new Date(Date.now() - 86400000 * 3).toISOString(),
-      assessorName: 'Self-Assessment',
-      type: 'MSK_SCREEN',
-      mskData: {
-        id: 'msk-1',
-        employeeId: 'emp-1',
-        assessmentDate: new Date(Date.now() - 86400000 * 3).toISOString(),
-        regions: [
-          { name: 'neck', painLevel: 3, stiffness: 4, limitedMotion: false, notes: 'Morning stiffness' },
-          { name: 'shoulders', painLevel: 5, stiffness: 4, limitedMotion: true, notes: 'Right shoulder limited' },
-          { name: 'lower_back', painLevel: 8, stiffness: 7, limitedMotion: true, notes: 'Chronic pain, worse after shifts' },
-          { name: 'hips', painLevel: 4, stiffness: 3, limitedMotion: false },
-          { name: 'knees', painLevel: 2, stiffness: 1, limitedMotion: false }
-        ],
-        totalRiskScore: 72,
-        riskLevel: 'High',
-        workRiskFactors: ['Prolonged standing', 'Repetitive lifting', 'Poor ergonomic setup'],
-        activityLimitations: ['Difficulty lifting heavy objects', 'Reduced mobility after long shifts'],
-        aiSummary: 'High MSK risk - lower back is primary concern. Work-related factors are significant contributors.',
-        recommendations: ['Ergonomic assessment', 'Physical therapy referral', 'Lower back strengthening program'],
-        followUpRecommended: true
-      },
-      clinicalNotes: 'Patient reports chronic lower back pain, aggravated by work. Recommending ergonomic eval.',
-      aiSummary: 'High MSK risk profile. Lower back and shoulder show significant risk. Work ergonomics are a key contributor.',
-      recommendedPrograms: ['Back Pain Management Program', 'Ergonomic Workstation Assessment'],
-      status: 'completed'
-    },
-    lastAssessmentDate: new Date(Date.now() - 86400000 * 3).toISOString(),
-    overallHealthScore: 48
-  },
-  {
-    id: 'emp-2',
-    name: 'Sarah Jenkins',
-    email: 'sjenkins@company.com',
-    department: 'Operations',
-    position: 'Area Supervisor',
-    hireDate: '2020-06-01',
-    riskProfile: {
-      id: 'rp-2',
-      employeeId: 'emp-2',
-      lastUpdated: new Date(Date.now() - 86400000 * 2).toISOString(),
-      turnoverRisk: 'Low',
-      burnoutScore: 15,
-      absenteeismIndex: 8,
-      engagementScore: 92,
-      mskRiskScore: 18,
-      financialRiskScore: 20,
-      complianceStatus: 'Compliant',
-      aiInsights: [
-        'Excellent engagement and performance',
-        'Low MSK risk - no significant concerns',
-        'Candidate for leadership development'
-      ],
-      predictiveAttritionRisk: 8
-    },
-    lastAssessmentDate: new Date(Date.now() - 86400000 * 30).toISOString(),
-    overallHealthScore: 89
-  },
-  {
-    id: 'emp-3',
-    name: 'Michael Chang',
-    email: 'mchang@company.com',
-    department: 'Food & Beverage',
-    position: 'Server',
-    hireDate: '2023-01-10',
-    riskProfile: {
-      id: 'rp-3',
-      employeeId: 'emp-3',
-      lastUpdated: new Date(Date.now() - 86400000 * 10).toISOString(),
-      turnoverRisk: 'High',
-      burnoutScore: 88,
-      absenteeismIndex: 45,
-      engagementScore: 22,
-      mskRiskScore: 65,
-      financialRiskScore: 70,
-      complianceStatus: 'AtRisk',
-      aiInsights: [
-        'Critical burnout indicators',
-        'High turnover probability - seeking new opportunities',
-        'MSK risk in knees and ankles from prolonged standing',
-        'Engagement at all-time low - immediate intervention needed'
-      ],
-      predictiveAttritionRisk: 91
-    },
-    clinicalAssessment: {
-      id: 'ca-3',
-      employeeId: 'emp-3',
-      assessmentDate: new Date(Date.now() - 86400000 * 7).toISOString(),
-      assessorName: 'Self-Assessment',
-      type: '3D_MOTION',
-      motionData: {
-        id: 'mot-3',
-        employeeId: 'emp-3',
-        assessmentDate: new Date(Date.now() - 86400000 * 7).toISOString(),
-        movementTests: [
-          { name: 'Squat', symmetryScore: 58, romDegrees: 85, compensations: ['Knee valgus', 'Excessive forward lean'] },
-          { name: 'Overhead reach', symmetryScore: 72, romDegrees: 165, compensations: [] },
-          { name: 'Walking gait', symmetryScore: 61, romDegrees: 0, compensations: ['Left antalgic gait'] }
-        ],
-        overallMobilityScore: 63,
-        asymmetryIndex: 22,
-        aiAnalysis: 'Significant asymmetry detected. Left side showing compensation patterns. Knee and ankle mobility concerns.',
-        riskFlags: ['Left knee valgus', 'Ankle mobility deficit', 'Hip flexor tightness']
-      },
-      clinicalNotes: 'Gait analysis shows left-side compensation. Knee pain reported after 6+ hour shifts.',
-      aiSummary: 'Moderate-high MSK risk. Motion analysis reveals biomechanical inefficiencies that could lead to injury.',
-      recommendedPrograms: ['Gait Correction Program', 'Lower Extremity Strengthening'],
-      status: 'completed'
-    },
-    lastAssessmentDate: new Date(Date.now() - 86400000 * 7).toISOString(),
-    overallHealthScore: 41
-  },
-  {
-    id: 'emp-4',
-    name: 'Emily Rodriguez',
-    email: 'erodriguez@company.com',
-    department: 'HR',
-    position: 'HR Manager',
-    hireDate: '2019-09-15',
-    riskProfile: {
-      id: 'rp-4',
-      employeeId: 'emp-4',
-      lastUpdated: new Date(Date.now() - 86400000 * 1).toISOString(),
-      turnoverRisk: 'Low',
-      burnoutScore: 28,
-      absenteeismIndex: 12,
-      engagementScore: 85,
-      mskRiskScore: 22,
-      financialRiskScore: 15,
-      complianceStatus: 'Compliant',
-      aiInsights: [
-        'Stable risk profile',
-        'MSK risk well within normal range',
-        'Consider for stress management programs as manager'
-      ],
-      predictiveAttritionRisk: 12
-    },
-    lastAssessmentDate: new Date(Date.now() - 86400000 * 60).toISOString(),
-    overallHealthScore: 82
-  },
-  {
-    id: 'emp-5',
-    name: 'James Thompson',
-    email: 'jthompson@company.com',
-    department: 'Operations',
-    position: 'Warehouse Associate',
-    hireDate: '2021-11-20',
-    riskProfile: {
-      id: 'rp-5',
-      employeeId: 'emp-5',
-      lastUpdated: new Date(Date.now() - 86400000 * 4).toISOString(),
-      turnoverRisk: 'Medium',
-      burnoutScore: 52,
-      absenteeismIndex: 38,
-      engagementScore: 58,
-      mskRiskScore: 81, // HIGH - warehouse work
-      financialRiskScore: 45,
-      complianceStatus: 'Compliant',
-      aiInsights: [
-        'High MSK risk due to physical nature of work',
-        'Shoulder and lower back are primary concerns',
-        'Ergonomic interventions could reduce risk by 30%'
-      ],
-      predictiveAttritionRisk: 45
-    },
-    clinicalAssessment: {
-      id: 'ca-5',
-      employeeId: 'emp-5',
-      assessmentDate: new Date(Date.now() - 86400000 * 4).toISOString(),
-      assessorName: 'Self-Assessment',
-      type: 'MSK_SCREEN',
-      mskData: {
-        id: 'msk-5',
-        employeeId: 'emp-5',
-        assessmentDate: new Date(Date.now() - 86400000 * 4).toISOString(),
-        regions: [
-          { name: 'neck', painLevel: 4, stiffness: 5, limitedMotion: true, notes: 'After heavy lifting' },
-          { name: 'shoulders', painLevel: 7, stiffness: 6, limitedMotion: true, notes: 'Right rotator cuff strain history' },
-          { name: 'lower_back', painLevel: 9, stiffness: 8, limitedMotion: true, notes: 'Acute flare-up, lifting incident 2 weeks ago' },
-          { name: 'hips', painLevel: 3, stiffness: 2, limitedMotion: false },
-          { name: 'knees', painLevel: 6, stiffness: 5, limitedMotion: false, notes: 'Crepitus noted' }
-        ],
-        totalRiskScore: 81,
-        riskLevel: 'High',
-        workRiskFactors: ['Heavy lifting', 'Repetitive motions', 'Prolonged standing', 'Twisting movements'],
-        activityLimitations: ['Cannot lift >20lbs currently', 'Limited bending'],
-        aiSummary: 'Critical MSK risk. Lower back is severe. Immediate medical evaluation recommended. High risk of chronicity.',
-        recommendations: ['Urgent medical evaluation', 'Work restrictions', 'Physical therapy', 'Ergonomic reassessment'],
-        followUpRecommended: true
-      },
-      clinicalNotes: 'Recent lifting injury. Patient on light duty. Recommending MD follow-up.',
-      aiSummary: 'High MSK risk with acute injury. Lower back risk is critical. Needs medical follow-up.',
-      recommendedPrograms: ['Acute Back Injury Protocol', 'Work Hardening Program'],
-      status: 'pending'
-    },
-    lastAssessmentDate: new Date(Date.now() - 86400000 * 4).toISOString(),
-    overallHealthScore: 35
-  }
-];
+// Legacy types for compatibility
+export interface Task {
+  id: string;
+  patientId?: string;
+  patientName?: string;
+  title: string;
+  description?: string;
+  dueDate?: string;
+  completed: boolean;
+}
+
+export interface Patient {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  interest: string;
+  contactMethod: string;
+  bestTime: string;
+  source: string;
+  status: 'New' | 'Analyzed' | 'Contacted' | 'Scheduled';
+  intent: 'High' | 'Medium' | 'Low';
+  leadScore: number;
+  aiSummary: string;
+  suggestedFollowUp: string;
+  communications: {
+    emails: { type: string; day: number; subject: string; body: string }[];
+    sms: { type: string; body: string }[];
+  };
+  timeline: { date: string; event: string }[];
+  appointmentClicked: boolean;
+}
+
+export interface EmployeeRiskProfile {
+  id: string;
+  name: string;
+  department: string;
+  position: string;
+  averageLateness: number;
+  sickDaysLastQuarter: number;
+  performanceScore: number;
+  motivationLevel: number;
+  turnoverRisk: 'Low' | 'Medium' | 'High';
+  lastAssessmentDate: string;
+  notes: string;
+  voiceIntake?: string;
+  surveyResults?: {
+    reasonForLate?: string;
+    motivationDrivers?: string[];
+    burnoutSymptoms?: string[];
+  };
+}
 
 // ─────────────────────────────────────────
 // Context Interface
 // ─────────────────────────────────────────
 interface DemoContextType {
-  // Employees (both patients and staff)
   employees: Employee[];
   getEmployee: (id: string) => Employee | undefined;
   updateEmployee: (id: string, data: Partial<Employee>) => void;
   updateRiskProfile: (employeeId: string, data: Partial<RiskProfile>) => void;
   addClinicalAssessment: (employeeId: string, assessment: ClinicalAssessment) => void;
+  refreshEmployees: () => Promise<void>;
 
-  // Legacy patient/task support
   patients: Patient[];
   currentPatient: Partial<Patient>;
   setCurrentPatient: (patient: Partial<Patient>) => void;
@@ -375,51 +200,162 @@ interface DemoContextType {
   addTask: (task: Task) => void;
   updateTask: (id: string, data: Partial<Task>) => void;
 
-  // HR Risk
   employeeRisks: EmployeeRiskProfile[];
   updateEmployeeRisk: (id: string, data: Partial<EmployeeRiskProfile>) => void;
+  refreshEmployeeRisks: () => Promise<void>;
 
-  // User
   currentUser: AppUser | null;
   loginAs: (role: UserRole, employeeId?: string) => void;
   logout: () => void;
   resetDemo: () => void;
 
-  // Computed stats
   companyHealthScore: number;
   criticalRiskCount: number;
   avgMSKRisk: number;
   avgBurnoutScore: number;
+
+  loading: boolean;
+  error: string | null;
 }
 
 const DemoContext = createContext<DemoContextType | undefined>(undefined);
 
+// Transform API employee data to match frontend interface
+function transformEmployee(apiEmp: any): Employee {
+  return {
+    id: String(apiEmp.id),
+    name: apiEmp.name,
+    email: apiEmp.email,
+    department: apiEmp.department,
+    position: apiEmp.position,
+    hireDate: apiEmp.hire_date,
+    overallHealthScore: 75, // Default since not in DB
+    riskProfile: {
+      id: String(apiEmp.hrRisk?.id || apiEmp.id),
+      employeeId: String(apiEmp.id),
+      lastUpdated: apiEmp.hrRisk?.updated_at || new Date().toISOString(),
+      turnoverRisk: (apiEmp.hrRisk?.turnover_risk as any) || 'Low',
+      burnoutScore: Math.max(0, 100 - (apiEmp.hrRisk?.motivation_level || 70)),
+      absenteeismIndex: Math.min(100, (apiEmp.hrRisk?.sick_days || 0) * 10),
+      engagementScore: apiEmp.hrRisk?.motivation_level || 70,
+      mskRiskScore: 30, // Default
+      financialRiskScore: 25, // Default
+      complianceStatus: 'Compliant',
+      aiInsights: apiEmp.hrRisk?.notes ? [apiEmp.hrRisk.notes] : [],
+      predictiveAttritionRisk: apiEmp.hrRisk?.turnover_risk === 'High' ? 75 : apiEmp.hrRisk?.turnover_risk === 'Medium' ? 45 : 15
+    },
+    turnover_risk: apiEmp.hrRisk?.turnover_risk,
+    motivation_level: apiEmp.hrRisk?.motivation_level,
+    performance_score: apiEmp.hrRisk?.performance_score,
+    sick_days: apiEmp.hrRisk?.sick_days,
+    notes: apiEmp.hrRisk?.notes
+  };
+}
+
+function transformEmployeeRisk(apiEmp: any): EmployeeRiskProfile {
+  return {
+    id: String(apiEmp.id),
+    name: apiEmp.name,
+    department: apiEmp.department,
+    position: apiEmp.position,
+    averageLateness: 0,
+    sickDaysLastQuarter: apiEmp.sick_days || 0,
+    performanceScore: apiEmp.performance_score || 75,
+    motivationLevel: apiEmp.motivation_level || 70,
+    turnoverRisk: (apiEmp.turnover_risk as any) || 'Low',
+    lastAssessmentDate: apiEmp.updated_at || new Date().toISOString(),
+    notes: apiEmp.notes || '',
+    surveyResults: {
+      motivationDrivers: [],
+      burnoutSymptoms: []
+    }
+  };
+}
+
 export const DemoProvider = ({ children }: { children: ReactNode }) => {
-  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
-  const [patients, setPatients] = useState<Patient[]>(mockPatients);
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
-  const [employeeRisks, setEmployeeRisks] = useState<EmployeeRiskProfile[]>(mockEmployeeRisks);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeeRisks, setEmployeeRisks] = useState<EmployeeRiskProfile[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentPatient, setCurrentPatient] = useState<Partial<Patient>>({ source: 'Front Desk QR' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch employees from API
+  const refreshEmployees = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/employees`);
+      if (!res.ok) throw new Error('Failed to fetch employees');
+      const data = await res.json();
+      const transformed = Array.isArray(data) ? data.map(transformEmployee) : [];
+      setEmployees(transformed);
+    } catch (err: any) {
+      console.error('Error fetching employees:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch employee risks from API
+  const refreshEmployeeRisks = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/hr-risks`);
+      if (!res.ok) throw new Error('Failed to fetch HR risks');
+      const data = await res.json();
+      const transformed = Array.isArray(data) ? data.map(transformEmployeeRisk) : [];
+      setEmployeeRisks(transformed);
+    } catch (err: any) {
+      console.error('Error fetching HR risks:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Initial data fetch
+  useEffect(() => {
+    refreshEmployees();
+    refreshEmployeeRisks();
+  }, [refreshEmployees, refreshEmployeeRisks]);
 
   // Computed stats
-  const companyHealthScore = Math.round(
-    employees.reduce((acc, e) => acc + e.overallHealthScore, 0) / employees.length
-  );
-  const criticalRiskCount = employees.filter(e =>
-    e.riskProfile.turnoverRisk === 'High' || e.riskProfile.turnoverRisk === 'Critical'
+  const companyHealthScore = employees.length > 0
+    ? Math.round(employees.reduce((acc, e) => acc + e.overallHealthScore, 0) / employees.length)
+    : 0;
+  
+  const criticalRiskCount = employeeRisks.filter(e =>
+    e.turnoverRisk === 'High' || e.turnoverRisk === 'Critical'
   ).length;
-  const avgMSKRisk = Math.round(
-    employees.reduce((acc, e) => acc + e.riskProfile.mskRiskScore, 0) / employees.length
-  );
-  const avgBurnoutScore = Math.round(
-    employees.reduce((acc, e) => acc + e.riskProfile.burnoutScore, 0) / employees.length
-  );
+  
+  const avgMSKRisk = employees.length > 0
+    ? Math.round(employees.reduce((acc, e) => acc + e.riskProfile.mskRiskScore, 0) / employees.length)
+    : 0;
+  
+  const avgBurnoutScore = employees.length > 0
+    ? Math.round(employees.reduce((acc, e) => acc + e.riskProfile.burnoutScore, 0) / employees.length)
+    : 0;
 
   const getEmployee = (id: string) => employees.find(e => e.id === id);
 
-  const updateEmployee = (id: string, data: Partial<Employee>) => {
-    setEmployees(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
+  const updateEmployee = async (id: string, data: Partial<Employee>) => {
+    try {
+      const res = await fetch(`${API_BASE}/employees/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error('Failed to update employee');
+      await refreshEmployees();
+    } catch (err: any) {
+      console.error('Error updating employee:', err);
+      setError(err.message);
+    }
   };
 
   const updateRiskProfile = (employeeId: string, data: Partial<RiskProfile>) => {
@@ -447,7 +383,7 @@ export const DemoProvider = ({ children }: { children: ReactNode }) => {
       name: names[role],
       role,
       email: `${role.toLowerCase()}@company.com`,
-      employeeId: role === 'Patient' ? 'emp-1' : employeeId
+      employeeId: role === 'Patient' ? '1' : employeeId
     });
   };
 
@@ -469,8 +405,29 @@ export const DemoProvider = ({ children }: { children: ReactNode }) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...data } : t));
   };
 
-  const updateEmployeeRisk = (id: string, data: Partial<EmployeeRiskProfile>) => {
-    setEmployeeRisks(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
+  const updateEmployeeRisk = async (id: string, data: Partial<EmployeeRiskProfile>) => {
+    try {
+      // Find the employee_id for this risk
+      const employee = employees.find(e => e.id === id);
+      if (!employee) return;
+      
+      const res = await fetch(`${API_BASE}/hr-risks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          turnover_risk: data.turnoverRisk,
+          motivation_level: data.motivationLevel,
+          performance_score: data.performanceScore,
+          sick_days: data.sickDaysLastQuarter,
+          notes: data.notes
+        })
+      });
+      if (!res.ok) throw new Error('Failed to update HR risk');
+      await refreshEmployeeRisks();
+    } catch (err: any) {
+      console.error('Error updating employee risk:', err);
+      setError(err.message);
+    }
   };
 
   const resetDemo = () => {
@@ -479,12 +436,13 @@ export const DemoProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <DemoContext.Provider value={{
-      employees, getEmployee, updateEmployee, updateRiskProfile, addClinicalAssessment,
+      employees, getEmployee, updateEmployee, updateRiskProfile, addClinicalAssessment, refreshEmployees,
       patients, currentPatient, setCurrentPatient, addPatient, updatePatient,
       tasks, addTask, updateTask,
-      employeeRisks, updateEmployeeRisk,
+      employeeRisks, updateEmployeeRisk, refreshEmployeeRisks,
       currentUser, loginAs, logout, resetDemo,
-      companyHealthScore, criticalRiskCount, avgMSKRisk, avgBurnoutScore
+      companyHealthScore, criticalRiskCount, avgMSKRisk, avgBurnoutScore,
+      loading, error
     }}>
       {children}
     </DemoContext.Provider>

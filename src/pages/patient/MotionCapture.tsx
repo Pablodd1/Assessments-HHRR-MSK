@@ -140,13 +140,13 @@ export const MotionCapture = () => {
 
   // ── Computed ──
   const overallScore     = useMemo(() => {
-    const results = Object.values(testResults);
+    const results = Object.values(testResults) as MovementTestResult[];
     if (results.length === 0) return 0;
     return Math.round(results.reduce((a, r) => a + r.score, 0) / results.length);
   }, [testResults]);
 
   const asymmetryIndex    = useMemo(() => {
-    const results = Object.values(testResults);
+    const results = Object.values(testResults) as MovementTestResult[];
     if (results.length === 0) return 0;
     const avgSym = results.reduce((a, r) => a + r.symmetry, 0) / results.length;
     return Math.round(100 - avgSym);
@@ -235,7 +235,7 @@ export const MotionCapture = () => {
         overallMobilityScore: overallScore,
         asymmetryIndex,
         aiAnalysis: 'AI-powered motion analysis complete. Movement patterns analyzed for biomechanical efficiency.',
-        riskFlags: Object.entries(testResults)
+        riskFlags: (Object.entries(testResults) as [string, MovementTestResult][])
           .filter(([_, r]) => r.compensations.length > 0)
           .flatMap(([testId, r]) => r.compensations)
       },

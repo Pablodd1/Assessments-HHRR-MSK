@@ -14,7 +14,8 @@ import {
   Users,
   BarChart3,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Clock
 } from 'lucide-react';
 import { useDemo } from '../../store/DemoContext';
 

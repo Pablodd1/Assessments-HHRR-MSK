@@ -31,9 +31,11 @@ import { AssessmentHistory } from './pages/patient/AssessmentHistory';
 // ─── Pages — Admin Risk ──────────────────────────
 import { EmployeeRiskView } from './pages/admin/EmployeeRiskView';
 import { ClinicalOverview } from './pages/admin/ClinicalOverview';
+import { ClinicalAssessment } from './pages/ClinicalAssessment';
 import { Interventions } from './pages/admin/Interventions';
 import { ComplianceReports } from './pages/admin/ComplianceReports';
 import { EnterpriseAudit } from './pages/admin/EnterpriseAudit';
+import { CompanyOverview } from './pages/CompanyOverview';
 
 // ─── Icons ───────────────────────────────────────
 import {
@@ -50,7 +52,9 @@ import {
   FileText,
   HeartPulse,
   BrainCircuit,
-  AlertTriangle
+  AlertTriangle,
+  Building2,
+  Stethoscope
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────
@@ -114,13 +118,17 @@ const Navigation = () => {
                     <>
                       <NavLink to="/hr" icon={<Users className="w-4 h-4" />} label="HR & Risk" current={location.pathname} />
                       <NavLink to="/clinical" icon={<HeartPulse className="w-4 h-4" />} label="Clinical" current={location.pathname} />
+                      <NavLink to="/clinical-assessment" icon={<Stethoscope className="w-4 h-4" />} label="Assessment" current={location.pathname} />
                     </>
                   )}
                   {isManagement && (
                     <NavLink to="/audit" icon={<BarChart3 className="w-4 h-4" />} label="Enterprise Audit" current={location.pathname} />
                   )}
                   {isManagement && (
-                    <NavLink to="/interventions" icon={<BrainCircuit className="w-4 h-4" />} label="Interventions" current={location.pathname} />
+                    <>
+                      <NavLink to="/interventions" icon={<BrainCircuit className="w-4 h-4" />} label="Interventions" current={location.pathname} />
+                      <NavLink to="/company" icon={<Building2 className="w-4 h-4" />} label="Company" current={location.pathname} />
+                    </>
                   )}
                   {currentUser.role === 'Admin' && (
                     <NavLink to="/reports" icon={<ShieldAlert className="w-4 h-4" />} label="Compliance" current={location.pathname} />
@@ -199,7 +207,9 @@ const AppRoutes = () => {
           <Route path="/enterprise-audit" element={<EnterpriseAudit />} />
           <Route path="/employee/:id" element={<EmployeeRiskView />} />
           <Route path="/clinical" element={<ClinicalOverview />} />
+          <Route path="/clinical-assessment" element={<ClinicalAssessment />} />
           <Route path="/interventions" element={<Interventions />} />
+          <Route path="/company" element={<CompanyOverview />} />
           <Route path="/reports" element={<ComplianceReports />} />
         </>
       )}

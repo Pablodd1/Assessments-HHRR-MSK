@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDemo } from '../store/DemoContext';
 import { 
   Users, 
@@ -23,8 +23,10 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeSpeech, generateSpeech } from '../services/gemini';
 
+const API_BASE = 'http://localhost:3000/api';
+
 export const HRDashboard = () => {
-  const { employeeRisks, updateEmployeeRisk } = useDemo();
+  const { employeeRisks, updateEmployeeRisk, refreshEmployeeRisks } = useDemo();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -34,6 +36,11 @@ export const HRDashboard = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [speechAnalysis, setSpeechAnalysis] = useState<any>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+
+  // Refresh data on mount
+  useEffect(() => {
+    refreshEmployeeRisks();
+  }, [refreshEmployeeRisks]);
 
   const startRecording = async () => {
     setIsRecording(true);
@@ -45,22 +52,64 @@ export const HRDashboard = () => {
       setIsRecording(false);
       setIsAnalyzing(true);
       
-      // In a real app, we'd capture actual audio blob. 
-      // For demo, we'll send a prompt to analyze based on staff context
-      const result = await analyzeSpeech(undefined, `Employee ${selectedStaff.name} is in ${selectedStaff.department}. They have a ${selectedStaff.turnoverRisk} risk level. Their current notes are: ${selectedStaff.notes}. Please simulate a 1-sentence feedback they might give and analyze it.`);
-      
-      if (result) {
-        setSpeechAnalysis(result);
+      try {
+        // Call the API endpoint for speech analysis
+        const response = await fetch(`${API_BASE}/analyze-speech`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text_context: `Employee ${selectedStaff.name} is in ${selectedStaff.department}. They have a ${selectedStaff.turnoverRisk} risk level. Their current notes are: ${selectedStaff.notes}. Please simulate a 1-sentence feedback they might give and analyze it.`
+          })
+        });
         
-        // Use TTS to read back the suggestion
-        if (result.suggestedIntervention) {
-          const ttsUrl = await generateSpeech(result.suggestedIntervention);
-          if (ttsUrl) setAudioUrl(ttsUrl);
+        if (response.ok) {
+          const result = await response.json();
+          setSpeechAnalysis(result);
+          
+          // Use TTS to read back the suggestion
+          if (result.suggestedIntervention) {
+            const ttsUrl = await generateSpeech(result.suggestedIntervention);
+            if (ttsUrl) setAudioUrl(ttsUrl);
+          }
+        } else {
+          // Fallback to local analysis if API fails
+          const result = await analyzeSpeech(undefined, `Employee ${selectedStaff.name} is in ${selectedStaff.department}. They have a ${selectedStaff.turnoverRisk} risk level. Their current notes are: ${selectedStaff.notes}. Please simulate a 1-sentence feedback they might give and analyze it.`);
+          if (result) {
+            setSpeechAnalysis(result);
+            if (result.suggestedIntervention) {
+              const ttsUrl = await generateSpeech(result.suggestedIntervention);
+              if (ttsUrl) setAudioUrl(ttsUrl);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Speech analysis error:', error);
+        // Fallback to local analysis
+        const result = await analyzeSpeech(undefined, `Employee ${selectedStaff.name} is in ${selectedStaff.department}. They have a ${selectedStaff.turnoverRisk} risk level. Their current notes are: ${selectedStaff.notes}.`);
+        if (result) {
+          setSpeechAnalysis(result);
         }
       }
+      
       setIsAnalyzing(false);
     }, 2500);
   };
+
+  // Handle updating HR risk via API
+  const handleUpdateRisk = useCallback(async (id: string, data: any) => {
+    try {
+      const res = await fetch(`${API_BASE}/hr-risks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        await refreshEmployeeRisks();
+      }
+    } catch (error) {
+      console.error('Error updating risk:', error);
+    }
+  }, [refreshEmployeeRisks]);
 
   const filteredStaff = employeeRisks.filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -72,8 +121,12 @@ export const HRDashboard = () => {
   const stats = {
     totalStaff: employeeRisks.length,
     highRisk: highRiskEmployees.length,
-    avgMotivation: Math.round(employeeRisks.reduce((acc, curr) => acc + curr.motivationLevel, 0) / employeeRisks.length),
-    avgPerformance: Math.round(employeeRisks.reduce((acc, curr) => acc + curr.performanceScore, 0) / employeeRisks.length),
+    avgMotivation: employeeRisks.length > 0 
+      ? Math.round(employeeRisks.reduce((acc, curr) => acc + curr.motivationLevel, 0) / employeeRisks.length)
+      : 0,
+    avgPerformance: employeeRisks.length > 0
+      ? Math.round(employeeRisks.reduce((acc, curr) => acc + curr.performanceScore, 0) / employeeRisks.length)
+      : 0,
   };
 
   return (
@@ -247,7 +300,10 @@ export const HRDashboard = () => {
               <button className="p-2 text-gray-500 hover:bg-gray-50 rounded-lg border border-gray-200">
                 <Filter className="w-4 h-4" />
               </button>
-              <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700 px-3">
+              <button 
+                onClick={() => refreshEmployeeRisks()}
+                className="text-sm font-bold text-indigo-600 hover:text-indigo-700 px-3"
+              >
                 Update All Metrics
               </button>
             </div>
@@ -388,12 +444,12 @@ export const HRDashboard = () => {
                   AI Performance Audit
                 </h4>
                 <p className="text-sm text-gray-800 leading-relaxed font-medium mb-6">
-                  {selectedStaff.notes}
+                  {selectedStaff.notes || 'No notes available.'}
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white p-3 rounded-xl border border-indigo-50">
                     <p className="text-xs text-gray-500 mb-1">Avg Lateness</p>
-                    <p className="text-lg font-bold text-gray-900">{selectedStaff.averageLateness}m/wk</p>
+                    <p className="text-lg font-bold text-gray-900">{selectedStaff.averageLateness || 0}m/wk</p>
                   </div>
                   <div className="bg-white p-3 rounded-xl border border-indigo-50">
                     <p className="text-xs text-gray-500 mb-1">Risk Score</p>
@@ -546,7 +602,26 @@ export const HRDashboard = () => {
                   )}
                 </h4>
                 <button 
-                  onClick={() => setPendingAction(null)}
+                  onClick={async () => {
+                    if (pendingAction === 'review') {
+                      // Create intervention via API
+                      try {
+                        await fetch(`${API_BASE}/interventions`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            employee_id: selectedStaff.id,
+                            type: 'meeting',
+                            description: `Performance review scheduled for ${selectedStaff.name}`,
+                            status: 'pending'
+                          })
+                        });
+                      } catch (error) {
+                        console.error('Error creating intervention:', error);
+                      }
+                    }
+                    setPendingAction(null);
+                  }}
                   className={`w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl shadow-sm text-white transition-all ${
                     pendingAction === 'review' 
                       ? 'bg-red-600 hover:bg-red-700 ring-4 ring-red-100 scale-[1.02]' 
@@ -559,7 +634,15 @@ export const HRDashboard = () => {
                     : 'Schedule Performance Review'}
                 </button>
                 <button 
-                  onClick={() => setPendingAction(null)}
+                  onClick={async () => {
+                    if (pendingAction === 'motivation') {
+                      // Update motivation level via API
+                      await handleUpdateRisk(selectedStaff.id, {
+                        motivation_level: Math.min(100, (selectedStaff.motivationLevel || 0) + 10)
+                      });
+                    }
+                    setPendingAction(null);
+                  }}
                   className={`w-full inline-flex items-center justify-center px-4 py-3 border text-sm font-medium rounded-xl transition-all ${
                     pendingAction === 'motivation'
                       ? 'bg-indigo-600 text-white shadow-lg ring-4 ring-indigo-100 scale-[1.02]'
