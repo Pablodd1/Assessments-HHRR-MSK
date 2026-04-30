@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.44.0",
+    "@mediapipe/pose": "^0.5.1675469404",
     "@tailwindcss/vite": "^4.1.14",
     "@types/better-sqlite3": "^7.6.13",
     "@vercel/node": "^5.7.13",
