@@ -59,10 +59,12 @@ A comprehensive workforce health management platform that combines clinical MSK 
 
 ## Tech Stack
 
-- **Frontend**: React 19, Vite 6, Tailwind CSS 4, Framer Motion
-- **Backend**: Express.js, better-sqlite3
-- **AI**: Google Gemini (generateContent API)
+- **Frontend**: React 19, Vite 6, Tailwind CSS 4, Framer Motion, Zustand, React Router v7
+- **Backend**: Vercel Serverless Lambda (api/index.ts monofunction) + Express dev server (server.ts)
+- **Database**: Supabase PostgreSQL (vodhhauwowkalvaxzqyv) with service role auth
+- **AI**: Google Gemini (generateContent API with application/json response)
 - **Communication**: Resend (Email), Twilio (SMS)
+- **Deployment**: Vercel (frontend + serverless API)
 
 ## Project Structure
 
