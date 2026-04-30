@@ -3,8 +3,7 @@ import { createServer as createViteServer } from "vite";
 import { Resend } from "resend";
 import twilio from "twilio";
 import dotenv from "dotenv";
-import db from "./src/db.js";
-import { GoogleGenAI, Modality } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
@@ -13,462 +12,422 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Database row types
-interface DbCompany { id: number; name: string; industry: string; size: string; created_at: string; }
-interface DbEmployee { id: number; company_id: number | null; name: string; email: string; department: string; position: string; role: string; hire_date: string; created_at: string; company_name?: string; company_industry?: string; company_size?: string; }
-interface DbHRRisk { id: number; employee_id: number; turnover_risk: string; motivation_level: number; performance_score: number; sick_days: number; notes: string; updated_at: string; name?: string; department?: string; position?: string; }
-interface DbAssessment { id: number; employee_id: number; type: string; data_json: string; risk_score: number; risk_level: string; created_at: string; employee_name?: string; department?: string; }
-interface DbIntervention { id: number; employee_id: number; type: string; description: string; status: string; created_at: string; employee_name?: string; department?: string; }
+// ─────────────────────────────────────────
+// Supabase client
+// ─────────────────────────────────────────
+const SUPABASE_URL = "https://vodhhauwowkalvaxzqyv.supabase.co";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
 
-// Initialize Resend
-let resendClient: Resend | null = null;
+async function supabaseRequest(
+  table: string,
+  method: "GET" | "POST" | "PUT" | "DELETE",
+  options: {
+    params?: string;
+    body?: Record<string, unknown>;
+    id?: string | number;
+  } = {}
+) {
+  const { params, body, id } = options;
+  let url = `${SUPABASE_URL}/rest/v1/${table}`;
+  if (id !== undefined) {
+    url += `?id=eq.${id}`;
+  } else if (params) {
+    url += params;
+  }
+
+  const headers: Record<string, string> = {
+    "apikey": SUPABASE_SERVICE_KEY,
+    "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
+    "Content-Type": "application/json",
+  };
+  if (method === "POST" || method === "PUT" || method === "DELETE") {
+    headers["Prefer"] = "return=representation";
+  }
+
+  const fetchOptions: RequestInit = {
+    method,
+    headers,
+  };
+  if (body && (method === "POST" || method === "PUT")) {
+    fetchOptions.body = JSON.stringify(body);
+  }
+
+  const resp = await fetch(url, fetchOptions);
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data?.message || `Supabase error ${resp.status}`);
+  return data;
+}
+
+// ─────────────────────────────────────────
+// Resend
+// ─────────────────────────────────────────
 function getResend() {
-  if (!resendClient) {
-    const key = process.env.RESEND_API_KEY;
-    if (!key) {
-      throw new Error("RESEND_API_KEY environment variable is required");
-    }
-    resendClient = new Resend(key);
-  }
-  return resendClient;
+  const key = process.env.RESEND_API_KEY;
+  if (!key) throw new Error("RESEND_API_KEY environment variable is required");
+  return new Resend(key);
 }
 
-// Initialize Twilio
-let twilioClient: twilio.Twilio | null = null;
+// ─────────────────────────────────────────
+// Twilio
+// ─────────────────────────────────────────
 function getTwilio() {
-  if (!twilioClient) {
-    const sid = process.env.TWILIO_ACCOUNT_SID;
-    const token = process.env.TWILIO_AUTH_TOKEN;
-    if (!sid || !token) {
-      throw new Error("TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN environment variables are required");
-    }
-    twilioClient = twilio(sid, token);
-  }
-  return twilioClient;
+  const sid = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  if (!sid || !token) throw new Error("TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN required");
+  return twilio(sid, token);
 }
 
-// Initialize Gemini
-let geminiClient: GoogleGenAI | null = null;
+// ─────────────────────────────────────────
+// Gemini
+// ─────────────────────────────────────────
 function getGemini() {
-  if (!geminiClient) {
-    geminiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-  }
-  return geminiClient;
+  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 }
 
-// API Routes
+// ─────────────────────────────────────────
+// Routes
+// ─────────────────────────────────────────
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok", database: "supabase" });
 });
 
-// ─────────────────────────────────────────
-// Companies Routes
-// ─────────────────────────────────────────
-app.get("/api/companies", (req, res) => {
+// Companies
+app.get("/api/companies", async (req, res) => {
   try {
-    const companies = db.prepare("SELECT * FROM companies ORDER BY name").all();
-    res.json(companies);
+    const data = await supabaseRequest("companies", "GET", { params: "?select=*&order=name" });
+    res.json(data);
   } catch (error: any) {
-    console.error("Error fetching companies:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post("/api/companies", (req, res) => {
+app.post("/api/companies", async (req, res) => {
   try {
     const { name, industry, size } = req.body;
-    if (!name || !industry || !size) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-    const result = db.prepare(
-      "INSERT INTO companies (name, industry, size) VALUES (?, ?, ?)"
-    ).run(name, industry, size);
-    res.status(201).json({ id: result.lastInsertRowid, name, industry, size });
+    if (!name || !industry || !size) return res.status(400).json({ error: "Missing required fields" });
+    const data = await supabaseRequest("companies", "POST", { body: { name, industry, size } });
+    res.status(201).json(data[0]);
   } catch (error: any) {
-    console.error("Error creating company:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// ─────────────────────────────────────────
-// Employees Routes
-// ─────────────────────────────────────────
-app.get("/api/employees", (req, res) => {
+// Employees
+app.get("/api/employees", async (req, res) => {
   try {
-    const employees = db.prepare(`
-      SELECT e.*, c.name as company_name, c.industry as company_industry, c.size as company_size
-      FROM employees e
-      LEFT JOIN companies c ON e.company_id = c.id
-      ORDER BY e.name
-    `).all();
-    
-    // Fetch related data for each employee
-    const employeesWithData = employees.map((emp: any) => {
-      const hrRisk = db.prepare("SELECT * FROM hr_risks WHERE employee_id = ?").get(emp.id);
-      const assessments = db.prepare("SELECT * FROM clinical_assessments WHERE employee_id = ?").all(emp.id);
-      const interventions = db.prepare("SELECT * FROM interventions WHERE employee_id = ?").all(emp.id);
-      
-      return {
-        ...emp,
-        hrRisk,
-        clinicalAssessments: assessments,
-        interventions
-      };
-    });
-    
-    res.json(employeesWithData);
+    // Fetch all employees with company join
+    const employees: any[] = await supabaseRequest(
+      "employees",
+      "GET",
+      { params: "?select=*,companies(name,industry,size)&order=name" }
+    );
+
+    // Enrich with hr_risks, assessments, interventions
+    const enriched = await Promise.all(
+      employees.map(async (emp) => {
+        const [hrRisks, assessments, interventions] = await Promise.all([
+          supabaseRequest("hr_risks", "GET", { params: `?employee_id=eq.${emp.id}` }),
+          supabaseRequest("clinical_assessments", "GET", { params: `?employee_id=eq.${emp.id}&order=created_at.desc` }),
+          supabaseRequest("interventions", "GET", { params: `?employee_id=eq.${emp.id}&order=created_at.desc` }),
+        ]);
+        return {
+          ...emp,
+          company_name: emp.companies?.name,
+          company_industry: emp.companies?.industry,
+          company_size: emp.companies?.size,
+          hrRisk: hrRisks[0] || null,
+          clinicalAssessments: assessments.map((a: any) => ({
+            ...a,
+            data_json: typeof a.data_json === "string" ? JSON.parse(a.data_json) : a.data_json,
+          })),
+          interventions,
+        };
+      })
+    );
+
+    res.json(enriched);
   } catch (error: any) {
     console.error("Error fetching employees:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post("/api/employees", (req, res) => {
+app.post("/api/employees", async (req, res) => {
   try {
     const { company_id, name, email, department, position, role, hire_date } = req.body;
     if (!name || !email || !department || !position || !hire_date) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    
-    const result = db.prepare(`
-      INSERT INTO employees (company_id, name, email, department, position, role, hire_date)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(company_id || null, name, email, department, position, role || "Staff", hire_date);
-    
-    // Create default HR risk entry
-    db.prepare(`
-      INSERT INTO hr_risks (employee_id, turnover_risk, motivation_level, performance_score, sick_days, notes)
-      VALUES (?, 'Low', 70, 75, 0, '')
-    `).run(result.lastInsertRowid);
-    
-    res.status(201).json({ id: result.lastInsertRowid, message: "Employee created" });
+    const data = await supabaseRequest("employees", "POST", {
+      body: { company_id, name, email, department, position, role: role || "Staff", hire_date },
+    });
+    const newEmp = data[0];
+
+    // Create default HR risk
+    await supabaseRequest("hr_risks", "POST", {
+      body: { employee_id: newEmp.id, turnover_risk: "Low", motivation_level: 70, performance_score: 75, sick_days: 0, notes: "" },
+    });
+
+    res.status(201).json({ id: newEmp.id, message: "Employee created" });
   } catch (error: any) {
-    console.error("Error creating employee:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.get("/api/employees/:id", (req, res) => {
+app.get("/api/employees/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const employee = db.prepare(`
-      SELECT e.*, c.name as company_name, c.industry as company_industry, c.size as company_size
-      FROM employees e
-      LEFT JOIN companies c ON e.company_id = c.id
-      WHERE e.id = ?
-    `).get(id);
-    
-    if (!employee) {
-      return res.status(404).json({ error: "Employee not found" });
-    }
-    
-    const hrRisk = db.prepare("SELECT * FROM hr_risks WHERE employee_id = ?").get(id);
-    const assessments = db.prepare("SELECT * FROM clinical_assessments WHERE employee_id = ? ORDER BY created_at DESC").all(id);
-    const interventions = db.prepare("SELECT * FROM interventions WHERE employee_id = ? ORDER BY created_at DESC").all(id);
-    
+    const employees: any[] = await supabaseRequest(
+      "employees",
+      "GET",
+      { params: `?id=eq.${id}&select=*,companies(name,industry,size)` }
+    );
+    if (!employees.length) return res.status(404).json({ error: "Employee not found" });
+
+    const emp = employees[0];
+    const [hrRisks, assessments, interventions] = await Promise.all([
+      supabaseRequest("hr_risks", "GET", { params: `?employee_id=eq.${id}` }),
+      supabaseRequest("clinical_assessments", "GET", { params: `?employee_id=eq.${id}&order=created_at.desc` }),
+      supabaseRequest("interventions", "GET", { params: `?employee_id=eq.${id}&order=created_at.desc` }),
+    ]);
+
     res.json({
-      ...(employee as any),
-      hrRisk,
-      clinicalAssessments: assessments,
-      interventions
+      ...emp,
+      company_name: emp.companies?.name,
+      company_industry: emp.companies?.industry,
+      company_size: emp.companies?.size,
+      hrRisk: hrRisks[0] || null,
+      clinicalAssessments: assessments.map((a: any) => ({
+        ...a,
+        data_json: typeof a.data_json === "string" ? JSON.parse(a.data_json) : a.data_json,
+      })),
+      interventions,
     });
   } catch (error: any) {
-    console.error("Error fetching employee:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.put("/api/employees/:id", (req, res) => {
+app.put("/api/employees/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email, department, position, role, hire_date } = req.body;
-    
-    const employee = db.prepare("SELECT * FROM employees WHERE id = ?").get(id);
-    if (!employee) {
-      return res.status(404).json({ error: "Employee not found" });
-    }
-    
-    db.prepare(`
-      UPDATE employees SET name = ?, email = ?, department = ?, position = ?, role = ?, hire_date = ?
-      WHERE id = ?
-    `).run(name || (employee as any).name, email || (employee as any).email, department || (employee as any).department, position || (employee as any).position, role || (employee as any).role, hire_date || (employee as any).hire_date, id);
-    
+    await supabaseRequest("employees", "PATCH", {
+      params: `?id=eq.${id}`,
+      body: { name, email, department, position, role, hire_date },
+    });
     res.json({ message: "Employee updated" });
   } catch (error: any) {
-    console.error("Error updating employee:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// ─────────────────────────────────────────
-// Clinical Assessments Routes
-// ─────────────────────────────────────────
-app.get("/api/clinical-assessments", (req, res) => {
+// Clinical Assessments
+app.get("/api/clinical-assessments", async (req, res) => {
   try {
-    const assessments = db.prepare(`
-      SELECT ca.*, e.name as employee_name, e.department
-      FROM clinical_assessments ca
-      JOIN employees e ON ca.employee_id = e.id
-      ORDER BY ca.created_at DESC
-    `).all();
-    
-    const parsed = assessments.map((a: any) => ({
+    const data: any[] = await supabaseRequest(
+      "clinical_assessments",
+      "GET",
+      { params: "?select=*,employees(name,department)&order=created_at.desc" }
+    );
+    const parsed = data.map((a) => ({
       ...a,
-      data_json: JSON.parse(a.data_json)
+      data_json: typeof a.data_json === "string" ? JSON.parse(a.data_json) : a.data_json,
     }));
-    
     res.json(parsed);
   } catch (error: any) {
-    console.error("Error fetching assessments:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post("/api/clinical-assessments", (req, res) => {
+app.post("/api/clinical-assessments", async (req, res) => {
   try {
     const { employee_id, type, data_json, risk_score, risk_level } = req.body;
-    if (!employee_id || !type || !data_json) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-    
-    const result = db.prepare(`
-      INSERT INTO clinical_assessments (employee_id, type, data_json, risk_score, risk_level)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(employee_id, type, JSON.stringify(data_json), risk_score || 0, risk_level || "Low");
-    
-    res.status(201).json({ id: result.lastInsertRowid, message: "Assessment created" });
+    if (!employee_id || !type) return res.status(400).json({ error: "Missing required fields" });
+    const body = {
+      employee_id,
+      type,
+      data_json: typeof data_json === "string" ? data_json : JSON.stringify(data_json),
+      risk_score: risk_score || 0,
+      risk_level: risk_level || "Low",
+    };
+    const data = await supabaseRequest("clinical_assessments", "POST", { body });
+    res.status(201).json(data[0]);
   } catch (error: any) {
-    console.error("Error creating assessment:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.get("/api/clinical-assessments/:employeeId", (req, res) => {
+app.get("/api/clinical-assessments/:employeeId", async (req, res) => {
   try {
     const { employeeId } = req.params;
-    const assessments = db.prepare(`
-      SELECT * FROM clinical_assessments WHERE employee_id = ? ORDER BY created_at DESC
-    `).all(employeeId);
-    
-    const parsed = assessments.map((a: any) => ({
+    const data: any[] = await supabaseRequest(
+      "clinical_assessments",
+      "GET",
+      { params: `?employee_id=eq.${employeeId}&order=created_at.desc` }
+    );
+    const parsed = data.map((a) => ({
       ...a,
-      data_json: JSON.parse(a.data_json)
+      data_json: typeof a.data_json === "string" ? JSON.parse(a.data_json) : a.data_json,
     }));
-    
     res.json(parsed);
   } catch (error: any) {
-    console.error("Error fetching assessments:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// ─────────────────────────────────────────
-// HR Risks Routes
-// ─────────────────────────────────────────
-app.get("/api/hr-risks", (req, res) => {
+// HR Risks
+app.get("/api/hr-risks", async (req, res) => {
   try {
-    const risks = db.prepare(`
-      SELECT hr.*, e.name, e.department, e.position, e.email
-      FROM hr_risks hr
-      JOIN employees e ON hr.employee_id = e.id
-      ORDER BY 
-        CASE hr.turnover_risk WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 WHEN 'Medium' THEN 3 ELSE 4 END,
-        hr.employee_id
-    `).all();
-    res.json(risks);
+    const data: any[] = await supabaseRequest(
+      "hr_risks",
+      "GET",
+      { params: "?select=*,employees(name,department,position,email)&order=turnover_risk,employee_id" }
+    );
+    res.json(data);
   } catch (error: any) {
-    console.error("Error fetching HR risks:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post("/api/hr-risks", (req, res) => {
+app.post("/api/hr-risks", async (req, res) => {
   try {
     const { employee_id, turnover_risk, motivation_level, performance_score, sick_days, notes } = req.body;
-    if (!employee_id) {
-      return res.status(400).json({ error: "employee_id is required" });
-    }
-    
-    // Check if risk entry exists
-    const existing = db.prepare("SELECT id FROM hr_risks WHERE employee_id = ?").get(employee_id);
-    if (existing) {
-      return res.status(400).json({ error: "HR risk entry already exists for this employee" });
-    }
-    
-    const result = db.prepare(`
-      INSERT INTO hr_risks (employee_id, turnover_risk, motivation_level, performance_score, sick_days, notes)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(employee_id, turnover_risk || "Low", motivation_level || 70, performance_score || 75, sick_days || 0, notes || "");
-    
-    res.status(201).json({ id: result.lastInsertRowid, message: "HR risk created" });
+    if (!employee_id) return res.status(400).json({ error: "employee_id is required" });
+    const data = await supabaseRequest("hr_risks", "POST", {
+      body: {
+        employee_id,
+        turnover_risk: turnover_risk || "Low",
+        motivation_level: motivation_level || 70,
+        performance_score: performance_score || 75,
+        sick_days: sick_days || 0,
+        notes: notes || "",
+      },
+    });
+    res.status(201).json(data[0]);
   } catch (error: any) {
-    console.error("Error creating HR risk:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.get("/api/hr-risks/:employeeId", (req, res) => {
+app.get("/api/hr-risks/:employeeId", async (req, res) => {
   try {
     const { employeeId } = req.params;
-    const risk = db.prepare("SELECT * FROM hr_risks WHERE employee_id = ?").get(employeeId);
-    
-    if (!risk) {
-      return res.status(404).json({ error: "HR risk not found" });
-    }
-    
-    res.json(risk);
+    const data: any[] = await supabaseRequest("hr_risks", "GET", {
+      params: `?employee_id=eq.${employeeId}`,
+    });
+    if (!data.length) return res.status(404).json({ error: "HR risk not found" });
+    res.json(data[0]);
   } catch (error: any) {
-    console.error("Error fetching HR risk:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.put("/api/hr-risks/:employeeId", (req, res) => {
+app.put("/api/hr-risks/:employeeId", async (req, res) => {
   try {
     const { employeeId } = req.params;
     const { turnover_risk, motivation_level, performance_score, sick_days, notes } = req.body;
-    
-    const existing = db.prepare("SELECT * FROM hr_risks WHERE employee_id = ?").get(employeeId);
-    if (!existing) {
-      return res.status(404).json({ error: "HR risk not found" });
-    }
-    
-    db.prepare(`
-      UPDATE hr_risks SET 
-        turnover_risk = COALESCE(?, turnover_risk),
-        motivation_level = COALESCE(?, motivation_level),
-        performance_score = COALESCE(?, performance_score),
-        sick_days = COALESCE(?, sick_days),
-        notes = COALESCE(?, notes),
-        updated_at = datetime('now')
-      WHERE employee_id = ?
-    `).run(turnover_risk, motivation_level, performance_score, sick_days, notes, employeeId);
-    
-    const updated = db.prepare("SELECT * FROM hr_risks WHERE employee_id = ?").get(employeeId);
-    res.json(updated);
+    const body: Record<string, unknown> = {};
+    if (turnover_risk !== undefined) body.turnover_risk = turnover_risk;
+    if (motivation_level !== undefined) body.motivation_level = motivation_level;
+    if (performance_score !== undefined) body.performance_score = performance_score;
+    if (sick_days !== undefined) body.sick_days = sick_days;
+    if (notes !== undefined) body.notes = notes;
+    body.updated_at = new Date().toISOString();
+
+    await supabaseRequest("hr_risks", "PATCH", {
+      params: `?employee_id=eq.${employeeId}`,
+      body,
+    });
+    const updated = await supabaseRequest("hr_risks", "GET", {
+      params: `?employee_id=eq.${employeeId}`,
+    });
+    res.json(updated[0]);
   } catch (error: any) {
-    console.error("Error updating HR risk:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// ─────────────────────────────────────────
-// Interventions Routes
-// ─────────────────────────────────────────
-app.get("/api/interventions", (req, res) => {
+// Interventions
+app.get("/api/interventions", async (req, res) => {
   try {
     const { employee_id, status } = req.query;
-    let query = `
-      SELECT i.*, e.name as employee_name, e.department
-      FROM interventions i
-      JOIN employees e ON i.employee_id = e.id
-    `;
-    const params: any[] = [];
-    
-    if (employee_id) {
-      query += " WHERE i.employee_id = ?";
-      params.push(employee_id);
-    }
-    if (status) {
-      query += params.length ? " AND" : " WHERE";
-      query += " i.status = ?";
-      params.push(status);
-    }
-    
-    query += " ORDER BY i.created_at DESC";
-    
-    const interventions = db.prepare(query).all(...params);
-    res.json(interventions);
+    let params = "?select=*,employees(name,department)";
+    if (employee_id) params += `&employee_id=eq.${employee_id}`;
+    if (status) params += `&status=eq.${status}`;
+    params += "&order=created_at.desc";
+    const data = await supabaseRequest("interventions", "GET", { params });
+    res.json(data);
   } catch (error: any) {
-    console.error("Error fetching interventions:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post("/api/interventions", (req, res) => {
+app.post("/api/interventions", async (req, res) => {
   try {
     const { employee_id, type, description, status } = req.body;
-    if (!employee_id || !type || !description) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-    
-    const result = db.prepare(`
-      INSERT INTO interventions (employee_id, type, description, status)
-      VALUES (?, ?, ?, ?)
-    `).run(employee_id, type, description, status || "pending");
-    
-    res.status(201).json({ id: result.lastInsertRowid, message: "Intervention created" });
+    if (!employee_id || !type || !description) return res.status(400).json({ error: "Missing required fields" });
+    const data = await supabaseRequest("interventions", "POST", {
+      body: { employee_id, type, description, status: status || "pending" },
+    });
+    res.status(201).json(data[0]);
   } catch (error: any) {
-    console.error("Error creating intervention:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// ─────────────────────────────────────────
-// Dashboard Stats Route
-// ─────────────────────────────────────────
-app.get("/api/dashboard/stats", (req, res) => {
+// Dashboard Stats
+app.get("/api/dashboard/stats", async (req, res) => {
   try {
-    const totalEmployees = (db.prepare("SELECT COUNT(*) as count FROM employees").get() as any).count;
-    const totalCompanies = (db.prepare("SELECT COUNT(*) as count FROM companies").get() as any).count;
-    
-    const riskStats = db.prepare(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN turnover_risk = 'High' OR turnover_risk = 'Critical' THEN 1 ELSE 0 END) as highRisk,
-        AVG(motivation_level) as avgMotivation,
-        AVG(performance_score) as avgPerformance,
-        SUM(sick_days) as totalSickDays
-      FROM hr_risks
-    `).get() as any;
-    
-    const assessmentStats = db.prepare(`
-      SELECT 
-        COUNT(*) as total,
-        AVG(risk_score) as avgRiskScore,
-        SUM(CASE WHEN risk_level = 'High' OR risk_level = 'Critical' THEN 1 ELSE 0 END) as highRiskCount
-      FROM clinical_assessments
-    `).get() as any;
-    
-    const interventionStats = db.prepare(`
-      SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
-        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending
-      FROM interventions
-    `).get() as any;
-    
-    const departmentBreakdown = db.prepare(`
-      SELECT department, COUNT(*) as count, AVG(hr.motivation_level) as avgMotivation
-      FROM employees e
-      JOIN hr_risks hr ON e.id = hr.employee_id
-      GROUP BY department
-      ORDER BY count DESC
-    `).all();
-    
+    const [employees, companies, risks, assessments, interventions, deptBreakdown]: any[] = await Promise.all([
+      supabaseRequest("employees", "GET", { params: "?select=id" }),
+      supabaseRequest("companies", "GET", { params: "?select=id" }),
+      supabaseRequest("hr_risks", "GET", { params: "?select=turnover_risk,motivation_level,performance_score,sick_days" }),
+      supabaseRequest("clinical_assessments", "GET", { params: "?select=risk_score,risk_level" }),
+      supabaseRequest("interventions", "GET", { params: "?select=status" }),
+      supabaseRequest("employees", "GET", {
+        params: "?select=department,hr_risks(motivation_level)&hr_risks.motivation_level=not.is.null"
+      }),
+    ]);
+
+    const highRisk = risks.filter((r: any) => r.turnover_risk === "High" || r.turnover_risk === "Critical").length;
+    const highAsmnt = assessments.filter((a: any) => a.risk_level === "High" || a.risk_level === "Critical").length;
+
+    // Build department breakdown
+    const deptMap: Record<string, { count: number; totalMot: number }> = {};
+    for (const emp of deptBreakdown) {
+      if (!deptMap[emp.department]) deptMap[emp.department] = { count: 0, totalMot: 0 };
+      deptMap[emp.department].count++;
+      deptMap[emp.department].totalMot += emp.hr_risks?.motivation_level || 0;
+    }
+    const departmentBreakdown = Object.entries(deptMap).map(([department, v]) => ({
+      department,
+      count: v.count,
+      avgMotivation: Math.round(v.totalMot / v.count),
+    }));
+
     res.json({
-      totalEmployees,
-      totalCompanies,
+      totalEmployees: employees.length,
+      totalCompanies: companies.length,
       riskStats: {
-        total: riskStats.total || 0,
-        highRisk: riskStats.highRisk || 0,
-        avgMotivation: Math.round(riskStats.avgMotivation || 0),
-        avgPerformance: Math.round(riskStats.avgPerformance || 0),
-        totalSickDays: riskStats.totalSickDays || 0
+        total: risks.length,
+        highRisk,
+        avgMotivation: risks.length ? Math.round(risks.reduce((s: number, r: any) => s + (r.motivation_level || 0), 0) / risks.length) : 0,
+        avgPerformance: risks.length ? Math.round(risks.reduce((s: number, r: any) => s + (r.performance_score || 0), 0) / risks.length) : 0,
+        totalSickDays: risks.reduce((s: number, r: any) => s + (r.sick_days || 0), 0),
       },
       assessmentStats: {
-        total: assessmentStats.total || 0,
-        avgRiskScore: Math.round(assessmentStats.avgRiskScore || 0),
-        highRiskCount: assessmentStats.highRiskCount || 0
+        total: assessments.length,
+        avgRiskScore: assessments.length ? Math.round(assessments.reduce((s: number, a: any) => s + (a.risk_score || 0), 0) / assessments.length) : 0,
+        highRiskCount: highAsmnt,
       },
       interventionStats: {
-        total: interventionStats.total || 0,
-        active: interventionStats.active || 0,
-        completed: interventionStats.completed || 0,
-        pending: interventionStats.pending || 0
+        total: interventions.length,
+        active: interventions.filter((i: any) => i.status === "active").length,
+        completed: interventions.filter((i: any) => i.status === "completed").length,
+        pending: interventions.filter((i: any) => i.status === "pending").length,
       },
-      departmentBreakdown
+      departmentBreakdown,
     });
   } catch (error: any) {
     console.error("Error fetching dashboard stats:", error);
@@ -476,39 +435,19 @@ app.get("/api/dashboard/stats", (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────
-// Speech Analysis Route (Gemini)
-// ─────────────────────────────────────────
+// Speech Analysis (Gemini)
 app.post("/api/analyze-speech", async (req, res) => {
   try {
     const { text_context } = req.body;
-    
-    if (!text_context) {
-      return res.status(400).json({ error: "text_context is required" });
-    }
-    
-    const ai = getGemini();
-    const prompt = `
-      Analyze the following employee voice feedback.
-      Transcription/Text: ${text_context}
+    if (!text_context) return res.status(400).json({ error: "text_context is required" });
 
-      Generate a JSON response with:
-      - transcription: (string) The full transcribed text.
-      - sentiment: (string) "Positive", "Neutral", "Negative", or "Critical".
-      - toneIndex: (number 1-100) A numerical score for positive resonance.
-      - keyThemes: (array of strings) 2-3 main concerns or positives identified.
-      - suggestedIntervention: (string) A short specific HR recommendation based on the voice tone and content.
-      
-      Make it professional and objective.
-      Return ONLY valid JSON.
-    `;
+    const ai = getGemini();
+    const prompt = `Analyze the following employee voice feedback. Return ONLY valid JSON with these fields: transcription, sentiment (Positive/Neutral/Negative/Critical), toneIndex (1-100), keyThemes (array of 2-3 strings), suggestedIntervention (string). Text: ${text_context}`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-      },
+      config: { responseMimeType: "application/json" },
     });
 
     const result = JSON.parse(response.text || "{}");
@@ -519,29 +458,19 @@ app.post("/api/analyze-speech", async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────
-// Email/SMS Routes
-// ─────────────────────────────────────────
+// Email/SMS
 app.post("/api/send-email", async (req, res) => {
   try {
     const { to, subject, html } = req.body;
-    
-    if (!to || !subject || !html) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    const resend = getResend();
-    
-    const data = await resend.emails.send({
-      from: "Clinic Demo <onboarding@resend.dev>",
+    if (!to || !subject || !html) return res.status(400).json({ error: "Missing required fields" });
+    const data = await getResend().emails.send({
+      from: "HR Assessment <onboarding@resend.dev>",
       to,
       subject,
       html,
     });
-
     res.json({ success: true, data });
   } catch (error: any) {
-    console.error("Email error:", error);
     res.status(500).json({ error: error.message || "Failed to send email" });
   }
 });
@@ -549,43 +478,27 @@ app.post("/api/send-email", async (req, res) => {
 app.post("/api/send-sms", async (req, res) => {
   try {
     const { to, body } = req.body;
-    
-    if (!to || !body) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    const client = getTwilio();
+    if (!to || !body) return res.status(400).json({ error: "Missing required fields" });
     const fromNumber = process.env.TWILIO_PHONE_NUMBER;
-    
-    if (!fromNumber) {
-      throw new Error("TWILIO_PHONE_NUMBER environment variable is required");
-    }
-
-    const message = await client.messages.create({
-      body,
-      from: fromNumber,
-      to,
-    });
-
+    if (!fromNumber) throw new Error("TWILIO_PHONE_NUMBER required");
+    const message = await getTwilio().messages.create({ body, from: fromNumber, to });
     res.json({ success: true, messageId: message.sid });
   } catch (error: any) {
-    console.error("SMS error:", error);
     res.status(500).json({ error: error.message || "Failed to send SMS" });
   }
 });
 
+// ─────────────────────────────────────────
+// Start server
+// ─────────────────────────────────────────
 async function startServer() {
-  // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
+    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
     app.use(vite.middlewares);
   }
-
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`[HR ASSESSMENT] Server running on http://localhost:${PORT}`);
+    console.log(`[HR ASSESSMENT] Database: Supabase (vodhhauwowkalvaxzqyv)`);
   });
 }
 
