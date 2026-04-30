@@ -6,7 +6,36 @@ A dual-lens enterprise platform: **Corporate Risk Officers** get AI-powered work
 
 ---
 
-## 2. Design Language
+## 2. Competitive Landscape
+
+### Direct Competitors
+
+| Platform | Price | Core Strength | Clinical Feature | HR Risk Feature | Weakness |
+|----------|-------|-------------|-----------------|-----------------|----------|
+| **Spring Health** | $0-8/emp/mo | Mental health + work-life AI matching | AI mental health triage, care navigation | Productivity analytics, manager training | No physical/MSK, no motion capture |
+| **Virgin Pulse / Perkpal** | $3-6/emp/mo | Corporate wellness giant | Biometric screenings, health risk assessments | Broad HR engagement, challenges | Old UX, generic assessments |
+| **Limeade** | $3-5/emp/mo | Employee engagement platform | Well-being surveys, health content | Engagement scoring, recognition | Limited clinical depth |
+| **Gympass** | $5-10/emp/mo | Fitness network access | Gym/personal training network | Activity tracking, usage analytics | No injury prevention, no HR risk |
+| **KinetSense AI** | Enterprise | 3D motion capture + injury prediction | Markerless motion capture, range of motion | Injury cost analytics | No HR/wellness layer, enterprise-only |
+| **Physiomotion** | Enterprise | Physical therapy + MSK | Telehealth, rehab programs | OSHA injury tracking | No corporate HR risk, clinical-only |
+| **Our App** | TBD | Unified clinical + HR risk | MSK screening, 3D motion, posture photo | Turnover risk, burnout, engagement | Scheduling empty, AI mocked, no SMS/email automation |
+
+### Our Differentiators
+1. **Unified clinical + HR risk** — Only platform correlating MSK body data with workforce productivity
+2. **KinetSense-style motion capture UI** — Mobile-first camera capture with skeleton overlay
+3. **Body map MSK assessment** — Visual 8-region pain/stiffness mapping with work factor correlation
+4. **Voice-to-text HR analysis** — Manager voice notes analyzed for sentiment and intervention suggestions
+5. **3-tier risk stratification** — Individual employee → Department → Enterprise board view
+
+### Features competitors MISS that we have
+- Combined MSK + turnover risk + burnout in one employee profile
+- Occupational health + clinical body assessment integration
+- MSK work risk factors (prolonged sitting, heavy lifting, ergonomics) tied to injury prevention
+- Corporate compliance dashboard (OSHA, ADA, workers comp)
+
+---
+
+## 3. Design Language
 
 - **Primary**: `#6366F1` (Indigo)
 - **Secondary**: `#0F172A` (Slate-900)

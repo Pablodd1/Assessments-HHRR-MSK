@@ -79,7 +79,7 @@ export interface ClinicalAssessment {
   clinicalNotes: string;
   aiSummary: string;
   recommendedPrograms: string[];
-  status: 'pending' | 'in_progress' | 'completed' | 'reviewed';
+  status?: 'pending' | 'completed' | 'reviewed';
 }
 
 export interface RiskProfile {

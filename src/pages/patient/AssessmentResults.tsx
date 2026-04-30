@@ -44,7 +44,7 @@ export const AssessmentResults = () => {
 
   // Find which employee has this assessment result
   // Look through all employees' clinical assessments
-  let foundAssessment: { employeeId: string; type: string; mskData?: any; motionData?: any; postureData?: any; clinicalNotes?: string; aiSummary?: string; recommendedPrograms?: string[]; assessmentDate?: string } | null = null;
+  let foundAssessment: { employeeId: string; type: string; mskData?: any; motionData?: any; postureData?: any; clinicalNotes?: string; aiSummary?: string; recommendedPrograms?: string[]; assessmentDate?: string; status?: string } | null = null;
   let foundEmployee: { name: string } | null = null;
 
   for (const emp of employees) {

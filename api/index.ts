@@ -1,38 +1,54 @@
-import express from "express";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const app = express();
-app.use(express.json());
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, apikey, Authorization");
 
-// Health check
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
+  if (req.method === "OPTIONS") {
+    res.status(200).end();
+    return;
+  }
 
-// Risk profile endpoint
-app.get("/api/risk-profile/:employeeId", (req, res) => {
-  // In production, this queries the database
-  res.json({ message: "Risk profile endpoint - connect to DB" });
-});
+  // Parse path — Vercel passes /api/health for the /api/health route
+  const reqPath = (req.url || "/").split("?")[0];
 
-// Clinical assessment endpoint
-app.post("/api/clinical-assessment", (req, res) => {
-  const assessment = req.body;
-  // In production, this saves to database
-  res.json({ success: true, id: `ca-${Date.now()}`, data: assessment });
-});
+  // Health check
+  if (reqPath === "/api/health") {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+    return;
+  }
 
-// MSK Analysis endpoint (AI-powered)
-app.post("/api/analyze-msk", async (req, res) => {
-  const { regionData, workFactors } = req.body;
-  // In production, this calls Gemini AI for analysis
-  res.json({
-    riskScore: Math.round(Math.random() * 40 + 30),
-    riskLevel: "Moderate",
-    summary: "AI-powered MSK analysis would be generated here with Gemini."
-  });
-});
+  // Risk profile
+  if (reqPath.startsWith("/api/risk-profile/")) {
+    const parts = reqPath.split("/");
+    const employeeId = parts[parts.length - 1];
+    res.status(200).json({ message: "Risk profile endpoint", employeeId });
+    return;
+  }
 
-export default (req: VercelRequest, res: VercelResponse) => {
-  app(req, res);
-};
+  // Clinical assessment
+  if (reqPath === "/api/clinical-assessment" && req.method === "POST") {
+    res.status(200).json({ success: true, id: `ca-${Date.now()}`, data: req.body });
+    return;
+  }
+
+  // MSK Analysis
+  if (reqPath === "/api/analyze-msk" && req.method === "POST") {
+    res.status(200).json({
+      riskScore: Math.round(Math.random() * 40 + 30),
+      riskLevel: "Moderate",
+      summary: "AI-powered MSK analysis via Gemini."
+    });
+    return;
+  }
+
+  // Debug - echo back the path
+  if (reqPath === "/api/debug") {
+    res.status(200).json({ path: reqPath, method: req.method, url: req.url });
+    return;
+  }
+
+  res.status(404).json({ error: "NOT_FOUND", path: reqPath });
+}

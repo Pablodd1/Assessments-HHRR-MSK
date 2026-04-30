@@ -19,6 +19,14 @@ import {
 } from 'lucide-react';
 import { useDemo, MSKRegion } from '../store/DemoContext';
 
+export interface MSKReport {
+  summary: string;
+  preventionPlan: string[];
+  priorityAreas: string[];
+  followUpActions: string[];
+  workModifications: (string | null)[];
+}
+
 // ─────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────
@@ -91,7 +99,7 @@ export const ClinicalAssessment = () => {
   // AI & submission state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [aiReport, setAiReport] = useState<string | null>(null);
+  const [aiReport, setAiReport] = useState<MSKReport | null>(null);
   const [showResults, setShowResults] = useState(false);
 
   // ── Computed ──
@@ -214,10 +222,12 @@ Return ONLY valid JSON.
       setAiReport(data);
     } catch (error) {
       // Fallback: generate a simulated response
-      const highPainRegions = Object.entries(regionData)
+      type RegionEntry = { painLevel: number; notes: string };
+      const rData = regionData as Record<string, RegionEntry>;
+      const highPainRegions = Object.entries(rData)
         .filter(([_, d]) => d.painLevel >= 7)
         .map(([k]) => k);
-      const moderatePainRegions = Object.entries(regionData)
+      const moderatePainRegions = Object.entries(rData)
         .filter(([_, d]) => d.painLevel >= 4 && d.painLevel < 7)
         .map(([k]) => k);
 
@@ -253,7 +263,9 @@ Return ONLY valid JSON.
     if (!currentUser?.employeeId) return;
     setIsSaving(true);
 
-    const mskRegions: MSKRegion[] = Object.entries(regionData).map(([name, data]) => ({
+    type RegionEntry = { painLevel: number; notes: string };
+    const rData = regionData as Record<string, RegionEntry>;
+    const mskRegions: MSKRegion[] = Object.entries(rData).map(([name, data]) => ({
       name,
       painLevel: data.painLevel,
       stiffness: 0,

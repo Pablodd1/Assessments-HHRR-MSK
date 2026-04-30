@@ -11,6 +11,52 @@ A comprehensive workforce health management platform that combines clinical MSK 
 - **Real-time Dashboard**: Visualize workforce health metrics and risk trends
 - **Multi-channel Communication**: Email and SMS integration for follow-ups
 
+## Competitive Landscape
+
+| Platform | Price | Strength | Gap vs Our App |
+|----------|-------|----------|----------------|
+| **Spring Health** | $0-8/emp/mo | Mental health AI, care navigation | No MSK/motion capture |
+| **Virgin Pulse/Perkpal** | $3-6/emp/mo | Corporate wellness scale | Old UX, generic assessments |
+| **Limeade** | $3-5/emp/mo | Employee engagement | Limited clinical depth |
+| **Gympass** | $5-10/emp/mo | Fitness network | No injury prevention |
+| **KinetSense AI** | Enterprise | 3D motion capture | No HR/wellness layer |
+| **Physiomotion** | Enterprise | MSK telehealth | No corporate HR risk |
+
+### Our Unfair Advantages
+1. **Unified clinical + HR risk** in one employee profile
+2. **KinetSense-style motion capture** with skeleton overlay UI
+3. **8-region body map** MSK pain/stiffness mapping
+4. **Voice-to-text sentiment analysis** for HR interventions
+5. **Occupational health + clinical** integration (OSHA, ADA, workers comp)
+
+## Production Roadmap
+
+### P0 - Ship Now
+- [x] MSK Screening with body map (DONE)
+- [x] 3D Motion Capture with camera (DONE)
+- [x] Posture Photo Analysis (DONE)
+- [x] HR Risk Dashboard (DONE)
+- [x] Employee Risk Profiles (DONE)
+- [x] Voice-to-text AI sentiment analysis (DONE)
+- [x] Intervention Management (DONE)
+- [x] Compliance/audit reports (DONE)
+- [ ] **Scheduling module** — calendar booking + Google Cal sync
+- [ ] **Real AI motion analysis** — replace random scores with MediaPipe pose estimation
+
+### P1 - This Quarter
+- [ ] Real authentication (JWT/OAuth, role-based)
+- [ ] HIPAA-compliant data handling + audit logging
+- [ ] Email/SMS automation (Resend + Twilio wired up)
+- [ ] PDF report generation
+- [ ] Real-time notifications (SSE/WebSocket)
+
+### P2 - Next Quarter
+- [ ] HRIS integrations (Workday, BambooHR)
+- [ ] Multi-tenant architecture (multiple companies)
+- [ ] PWA with offline support for field assessments
+- [ ] Advanced predictive analytics + benchmarking
+- [ ] Corporate wellness gamification
+
 ## Tech Stack
 
 - **Frontend**: React 19, Vite 6, Tailwind CSS 4, Framer Motion
