@@ -23,7 +23,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeSpeech, generateSpeech } from '../services/gemini';
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = (typeof window !== 'undefined' ? window.location.origin : '') + '/api';
 
 export const HRDashboard = () => {
   const { employeeRisks, updateEmployeeRisk, refreshEmployeeRisks } = useDemo();
