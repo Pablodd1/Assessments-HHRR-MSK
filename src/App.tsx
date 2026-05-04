@@ -47,6 +47,11 @@ import { ViciousCycleMapper } from './pages/hr/ViciousCycleMapper';
 
 // ─── Pages — Clinical Analysis (NEW) ────────────
 import { ClinicalDataAnalysis } from './pages/clinical/DataAnalysis';
+import { ErgonomicAssessment } from './pages/clinical/ErgonomicAssessment';
+
+// ─── Pages — HIPAA & Validated Instruments ───────
+import { HIPAADashboard } from './pages/admin/HIPAADashboard';
+import { ValidatedQuestionnaires } from './pages/hr/ValidatedQuestionnaires';
 
 // ─── Icons ───────────────────────────────────────
 import {
@@ -208,6 +213,11 @@ const AppRoutes = () => {
 
       {/* ── Clinical Analysis Routes (NEW) ── */}
       <Route path="/clinical/analysis" element={<ClinicalDataAnalysis />} />
+      <Route path="/clinical/ergonomic" element={<ErgonomicAssessment />} />
+
+      {/* ── Validated Questionnaires & HIPAA ── */}
+      <Route path="/hr/questionnaires" element={<ValidatedQuestionnaires />} />
+      <Route path="/hipaa" element={<HIPAADashboard />} />
 
       {/* ── Patient Assessment Routes ── */}
       {isPatient && (
