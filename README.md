@@ -1,552 +1,372 @@
 # HR Risk Clinical Assessment Platform
 
-A comprehensive workforce health management platform that combines clinical MSK (Musculoskeletal) assessments with HR risk analytics to help organizations identify, monitor, and intervene on employee wellness risks.
+A comprehensive **dual-purpose enterprise platform** combining Clinical MSK/Functional Assessment with HR Workforce Analytics. Designed for large companies with established protocols and standards.
 
-## Features
+---
 
-- **Clinical Assessments**: Track MSK screenings, 3D motion analysis, and posture assessments
-- **HR Risk Analytics**: Monitor turnover risk, burnout, engagement, and absenteeism
-- **AI-Powered Insights**: Gemini-powered speech analysis and risk prediction
-- **Intervention Management**: Create and track wellness interventions
-- **Real-time Dashboard**: Visualize workforce health metrics and risk trends
-- **Multi-channel Communication**: Email and SMS integration for follow-ups
+## Platform Architecture: Two Core Pillars
 
-## Competitive Landscape
+### PILLAR 1: Clinical Assessment Engine (For Clinicians, Coaches & Doctors)
 
-| Platform | Price | Strength | Gap vs Our App |
-|----------|-------|----------|----------------|
-| **Spring Health** | $0-8/emp/mo | Mental health AI, care navigation | No MSK/motion capture |
-| **Virgin Pulse/Perkpal** | $3-6/emp/mo | Corporate wellness scale | Old UX, generic assessments |
-| **Limeade** | $3-5/emp/mo | Employee engagement | Limited clinical depth |
-| **Gympass** | $5-10/emp/mo | Fitness network | No injury prevention |
-| **KinetSense AI** | Enterprise | 3D motion capture | No HR/wellness layer |
-| **Physiomotion** | Enterprise | MSK telehealth | No corporate HR risk |
+The clinical side absorbs, understands, and creates proper assessments based on data from 3D motion capture, functional movement screens, and MSK evaluations. It generates treatment plans and training programs with voice explanations.
 
-### Our Unfair Advantages
-1. **Unified clinical + HR risk** in one employee profile
-2. **KinetSense-style motion capture** with skeleton overlay UI
-3. **8-region body map** MSK pain/stiffness mapping
-4. **Voice-to-text sentiment analysis** for HR interventions
-5. **Occupational health + clinical** integration (OSHA, ADA, workers comp)
+#### What It Does:
+- **Absorbs Raw 3D Assessment Data** — Parses incoming data from third-party motion capture systems (KinetSense, DARI Motion, etc.)
+- **Creates Clinical Assessments** — Generates comprehensive evaluations based on movement patterns, ROM, asymmetries
+- **Treatment Plan Generation** — AI-powered treatment plans from a Physical Therapist + Medical Doctor perspective
+- **Training Program Design** — Functional training programs based on movement pattern deficiencies
+- **Voice Transcript Explanations** — Every assessment includes AI-generated voice explanation for the patient, coach, and doctor
+- **Coaching Integration** — Actionable insights formatted for strength coaches and personal trainers
 
-## Production Roadmap
+#### Clinical Workflow:
+```
+3D Assessment Data (raw) → Data Parser → Pattern Analysis → AI Clinical Engine
+    ↓                                                              ↓
+Movement Patterns                                    Treatment Plan (PT/MD)
+Asymmetry Detection                                  Training Program (Coach)
+ROM Measurements                                     Voice Transcript (All)
+Compensation Patterns                                Risk Stratification
+Functional Scores                                    Follow-up Protocol
+```
 
-### P0 - Ship Now
-- [x] MSK Screening with body map (DONE)
-- [x] 3D Motion Capture with camera (DONE)
-- [x] Posture Photo Analysis (DONE)
-- [x] HR Risk Dashboard (DONE)
-- [x] Employee Risk Profiles (DONE)
-- [x] Voice-to-text AI sentiment analysis (DONE)
-- [x] Intervention Management (DONE)
-- [x] Compliance/audit reports (DONE)
-- [ ] **Scheduling module** — calendar booking + Google Cal sync
-- [ ] **Real AI motion analysis** — replace random scores with MediaPipe pose estimation
+#### Clinical Assessment Types:
+1. **MSK Screening** — 8-region body map with pain/stiffness/mobility assessment
+2. **3D Motion Capture** — Markerless skeleton tracking with ROM analysis
+3. **Posture Analysis** — Multi-angle photo analysis with deviation scoring
+4. **Functional Movement Screen** — Movement pattern quality assessment
+5. **Annual Wellness Review** — Comprehensive yearly evaluation
 
-### P1 - This Quarter
-- [ ] Real authentication (JWT/OAuth, role-based)
-- [ ] HIPAA-compliant data handling + audit logging
-- [ ] Email/SMS automation (Resend + Twilio wired up)
-- [ ] PDF report generation
-- [ ] Real-time notifications (SSE/WebSocket)
+#### Output for Each Stakeholder:
+| Stakeholder | Output Format | Content |
+|------------|---------------|---------|
+| **Patient** | Voice transcript + visual report | Plain-language explanation of findings, exercises, lifestyle changes |
+| **Coach** | Training protocol PDF | Exercise prescription, sets/reps, progressions, contraindications |
+| **Doctor/PT** | Clinical report | Medical terminology, differential considerations, referral triggers |
 
-### P2 - Next Quarter
-- [ ] HRIS integrations (Workday, BambooHR)
-- [ ] Multi-tenant architecture (multiple companies)
-- [ ] PWA with offline support for field assessments
-- [ ] Advanced predictive analytics + benchmarking
-- [ ] Corporate wellness gamification
+---
 
-## Tech Stack
+### PILLAR 2: HR Workforce Assessment Engine (For HR, Company Owners & Department Heads)
 
+The HR side uses structured questionnaires and creative assessment workflows to identify WHY employees get sick, come late, burn out, and cost the employer money. It quantifies the vicious cycle of absenteeism → double shifts → burnout → more absenteeism.
+
+#### What It Does:
+- **Identifies Root Causes** — Why staff calls in sick, arrives late, lacks productivity
+- **Quantifies Employer Cost** — Dollar cost of sick days, overtime, double shifts, turnover
+- **Breaks the Vicious Cycle** — Maps how one person's absence creates cascading burnout
+- **Assesses Incentive Needs** — What motivates each employee (not one-size-fits-all)
+- **Nutrition & Supplementation Assessment** — Energy, sleep, cognitive performance factors
+- **Department-Level Analysis** — Each department head gets their own assessment interface
+
+#### HR Assessment Questionnaires:
+
+##### 1. Absenteeism & Sick Day Analysis
+- Frequency of sick days (last 30/60/90 days)
+- Pattern detection (Mondays, Fridays, before/after holidays)
+- Self-reported reasons (illness, mental health, family, disengagement)
+- Impact on team (who covers, overtime generated)
+- Return-to-work satisfaction score
+
+##### 2. Lateness & Punctuality Assessment
+- Average minutes late per week
+- Root cause identification (commute, childcare, sleep, motivation)
+- Correlation with shift type (morning vs. afternoon)
+- Impact on team morale and workflow
+- Suggested accommodations (flex time, remote options)
+
+##### 3. The Vicious Cycle Mapper
+- When Employee A calls sick → Employee B takes double shift
+- Employee B becomes fatigued → Makes errors OR calls sick next week
+- Ripple effect scoring across departments
+- Financial cascade calculation
+- Breaking point identification
+
+##### 4. Productivity & Engagement Assessment
+- Task completion rates
+- Self-reported energy levels throughout the day
+- Focus and concentration scoring
+- Collaboration effectiveness
+- Innovation and initiative metrics
+
+##### 5. Incentive & Motivation Profiling
+- What type of recognition matters (public, private, monetary, time-off)
+- Career growth aspirations
+- Work-life balance priorities
+- Team dynamics preferences
+- Learning and development interests
+
+##### 6. Nutrition & Supplementation Needs
+- Daily energy patterns (morning crash, afternoon slump)
+- Sleep quality and duration
+- Hydration habits
+- Meal timing and quality
+- Supplement knowledge and current usage
+- Cognitive performance self-assessment
+
+##### 7. Workplace Environment & Ergonomics
+- Workstation comfort rating
+- Noise and distraction levels
+- Temperature and lighting satisfaction
+- Break frequency and quality
+- Physical activity during work hours
+
+##### 8. Mental Health & Stress Screening
+- Perceived stress scale
+- Burnout indicators (Maslach dimensions)
+- Work-life boundary assessment
+- Social support at work
+- Coping mechanism inventory
+
+#### HR Workflow:
+```
+Department Head Login → Select Assessment Type → Deploy to Team
+    ↓                                                    ↓
+View Results Dashboard                          Employees Complete
+Cost Impact Report                              Anonymous Responses
+Intervention Recommendations                    Pattern Detection
+Voice AI Summary                                Risk Flagging
+```
+
+#### Cost Calculator Outputs:
+| Metric | Calculation |
+|--------|-------------|
+| **Cost per sick day** | (Annual salary / 260) × 1.5 (coverage cost) |
+| **Double shift premium** | Overtime rate × hours × frequency |
+| **Turnover cost** | 50-200% of annual salary (recruitment + training + lost productivity) |
+| **Presenteeism cost** | Salary × productivity loss % × days affected |
+| **Cascade cost** | Sum of downstream sick days triggered by original absence |
+
+---
+
+## Raw Data Analysis Engine
+
+### Third-Party Data Integration
+The platform analyzes raw data coming from external sources:
+
+1. **Clinical Data Sources:**
+   - 3D motion capture exports (CSV, JSON, XML)
+   - Wearable device data (Apple Health, Google Fit, Garmin)
+   - EMR/EHR extracts
+   - Lab results
+   - Imaging reports
+
+2. **HR Data Sources:**
+   - HRIS exports (Workday, BambooHR, ADP)
+   - Time & attendance systems
+   - Performance review data
+   - Employee surveys (SurveyMonkey, Culture Amp)
+   - Benefits utilization data
+
+3. **Company Analytics Sources:**
+   - Workers compensation claims
+   - OSHA incident logs
+   - Insurance claims data
+   - Productivity metrics (Jira, Asana, Salesforce)
+   - Facility access logs
+
+### Data Processing Pipeline:
+```
+Raw Data Upload (CSV/JSON/XML/PDF) → Format Detection → Schema Mapping
+    ↓
+Data Validation → Anomaly Detection → Statistical Analysis
+    ↓
+Pattern Recognition → Correlation Engine → AI Insights
+    ↓
+Visual Dashboard → Actionable Recommendations → Voice Summary
+```
+
+---
+
+## User Interface Design Philosophy
+
+### For HR Department Heads (Enterprise-Grade UX):
+- **Checkbox-driven questionnaires** — No typing required, tap/click to complete
+- **Visual progress indicators** — Step-by-step wizard with percentage complete
+- **Traffic light system** — Green/Yellow/Red for instant risk comprehension
+- **Graphical dashboards** — Charts, gauges, and heat maps (not spreadsheets)
+- **One-click deployment** — Send assessments to entire departments instantly
+- **Anonymous mode** — Employees feel safe to answer honestly
+- **Mobile-first** — Works on any device without training
+
+### For Clinical Professionals:
+- **Data visualization** — 3D body models, movement graphs, trend lines
+- **AI-generated narratives** — No manual report writing
+- **Voice playback** — Listen to AI explanations while reviewing
+- **Comparison views** — Before/after, left/right, historical trends
+- **Export formats** — PDF, FHIR, HL7 for medical systems
+
+---
+
+## Technical Implementation
+
+### Tech Stack
 - **Frontend**: React 19, Vite 6, Tailwind CSS 4, Framer Motion, Zustand, React Router v7
-- **Backend**: Vercel Serverless Lambda (api/index.ts monofunction) + Express dev server (server.ts)
-- **Database**: Supabase PostgreSQL (vodhhauwowkalvaxzqyv) with service role auth
-- **AI**: Google Gemini (generateContent API with application/json response)
+- **Backend**: Express.js + Vercel Serverless Lambda
+- **Database**: Supabase PostgreSQL
+- **AI Engine**: Google Gemini (clinical analysis, speech generation, sentiment analysis)
 - **Communication**: Resend (Email), Twilio (SMS)
 - **Deployment**: Vercel (frontend + serverless API)
 
-## Project Structure
-
+### Project Structure
 ```
-Assessments-HHRR-MSK/
-├── server.ts           # Express API server with all routes
+webapp/
+├── server.ts                    # Express API server with all routes
 ├── src/
-│   ├── db.ts           # SQLite database setup and seed data
-│   ├── store/
-│   │   └── DemoContext.tsx   # React context with API integration
+│   ├── App.tsx                  # Main app with routing
+│   ├── store/DemoContext.tsx    # React context with API integration
+│   ├── types/clinical.ts       # TypeScript interfaces
+│   ├── services/
+│   │   ├── gemini.ts           # Gemini AI service (speech, analysis)
+│   │   ├── calendar.ts         # Calendar/scheduling service
+│   │   └── poseDetection.ts   # MediaPipe pose detection
 │   ├── pages/
-│   │   ├── HRDashboard.tsx   # Main HR dashboard with staff management
-│   │   └── admin/
-│   │       └── EmployeeRiskView.tsx  # Individual employee risk view
-│   └── services/
-│       └── gemini.ts   # Gemini AI service
-├── data/               # SQLite database file (created on first run)
-└── vercel.json         # Vercel deployment configuration
+│   │   ├── Dashboard.tsx            # Clinic lead dashboard
+│   │   ├── HRDashboard.tsx          # HR risk overview + voice analysis
+│   │   ├── ClinicalAssessment.tsx   # Clinical MSK assessment tool
+│   │   ├── WorkflowMap.tsx          # Interactive workflow visualization
+│   │   │
+│   │   ├── hr/                      # NEW: HR Assessment Module
+│   │   │   ├── WorkforceAssessment.tsx    # Main HR questionnaire hub
+│   │   │   ├── QuestionnaireWizard.tsx    # Step-by-step questionnaire engine
+│   │   │   ├── CostCalculator.tsx         # Employer cost analysis
+│   │   │   ├── ViciousCycleMapper.tsx     # Cascade effect visualizer
+│   │   │   ├── DepartmentView.tsx         # Per-department assessment
+│   │   │   └── DataImport.tsx             # Raw data upload & analysis
+│   │   │
+│   │   ├── clinical/                # NEW: Clinical Analysis Module
+│   │   │   ├── DataAnalysis.tsx           # 3D data parser & analyzer
+│   │   │   ├── TreatmentPlan.tsx          # AI treatment plan generator
+│   │   │   ├── TrainingProgram.tsx        # Coach training protocol
+│   │   │   └── VoiceReport.tsx            # Voice transcript generator
+│   │   │
+│   │   ├── patient/                 # Patient-facing assessments
+│   │   │   ├── AssessmentHub.tsx
+│   │   │   ├── MSKScreen.tsx
+│   │   │   ├── MotionCapture.tsx
+│   │   │   ├── PostureAnalysis.tsx
+│   │   │   ├── AssessmentResults.tsx
+│   │   │   └── AssessmentHistory.tsx
+│   │   │
+│   │   └── admin/                   # Admin views
+│   │       ├── EmployeeRiskView.tsx
+│   │       ├── ClinicalOverview.tsx
+│   │       ├── Interventions.tsx
+│   │       ├── ComplianceReports.tsx
+│   │       └── EnterpriseAudit.tsx
+│   │
+│   └── data/mockData.ts        # Demo data
+├── api/                         # Vercel serverless functions
+├── dist/                        # Production build output
+└── vercel.json                  # Deployment configuration
 ```
 
-## Setup
+---
+
+## API Endpoints
+
+### Core APIs (Existing)
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/api/health` | Health check |
+| GET/POST | `/api/companies` | Company CRUD |
+| GET/POST/PUT | `/api/employees` | Employee CRUD with risk enrichment |
+| GET/POST | `/api/clinical-assessments` | Clinical assessment CRUD |
+| GET/POST/PUT | `/api/hr-risks` | HR risk profile CRUD |
+| GET/POST | `/api/interventions` | Intervention management |
+| GET | `/api/dashboard/stats` | Aggregate statistics |
+| POST | `/api/analyze-speech` | Gemini voice sentiment analysis |
+| POST | `/api/send-email` | Email via Resend |
+| POST | `/api/send-sms` | SMS via Twilio |
+
+### New APIs (HR Workforce Assessment)
+| Method | Route | Description |
+|--------|-------|-------------|
+| POST | `/api/hr/questionnaire` | Submit completed questionnaire |
+| GET | `/api/hr/questionnaire/:type` | Get questionnaire template |
+| GET | `/api/hr/cost-analysis/:companyId` | Employer cost breakdown |
+| POST | `/api/hr/deploy-assessment` | Deploy questionnaire to department |
+| GET | `/api/hr/vicious-cycle/:deptId` | Get cascade effect data |
+| POST | `/api/hr/analyze-patterns` | AI pattern detection on responses |
+
+### New APIs (Clinical Analysis)
+| Method | Route | Description |
+|--------|-------|-------------|
+| POST | `/api/clinical/import-data` | Import raw 3D assessment data |
+| POST | `/api/clinical/generate-treatment` | AI treatment plan generation |
+| POST | `/api/clinical/generate-training` | AI training program generation |
+| POST | `/api/clinical/voice-report` | Generate voice explanation |
+| GET | `/api/clinical/analysis/:employeeId` | Full clinical analysis report |
+
+### New APIs (Data Import)
+| Method | Route | Description |
+|--------|-------|-------------|
+| POST | `/api/data/upload` | Upload raw data file (CSV/JSON/XML) |
+| POST | `/api/data/parse` | Parse and validate uploaded data |
+| GET | `/api/data/analysis/:id` | Get analysis results |
+| POST | `/api/data/correlate` | Cross-correlate clinical + HR data |
+
+---
+
+## Deployment & Setup
 
 ### Prerequisites
-
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
 ### Installation
-
 ```bash
-# Clone the repository
 git clone <repository-url>
-cd Assessments-HHRR-MSK
-
-# Install dependencies
+cd webapp
 npm install
-
-# Create data directory for SQLite
-mkdir -p data
 ```
 
 ### Environment Variables
-
-Create a `.env` file in the root directory:
-
 ```env
 # Google Gemini API (required for AI features)
 GEMINI_API_KEY=your_gemini_api_key
 
-# Resend (optional - for email sending)
+# Supabase (required for database)
+SUPABASE_SERVICE_KEY=your_supabase_service_key
+
+# Resend (optional - for email)
 RESEND_API_KEY=your_resend_api_key
 
-# Twilio (optional - for SMS sending)
+# Twilio (optional - for SMS)
 TWILIO_ACCOUNT_SID=your_twilio_account_sid
 TWILIO_AUTH_TOKEN=your_twilio_auth_token
 TWILIO_PHONE_NUMBER=+1234567890
 ```
 
 ### Running Locally
-
 ```bash
-# Development mode (starts both Vite dev server and Express API)
 npm run dev
-
-# The app will be available at http://localhost:3000
-# API runs on http://localhost:3000/api
+# App available at http://localhost:3000
 ```
 
 ### Building for Production
-
 ```bash
-# Build the frontend
 npm run build
-
-# Preview production build
 npm run preview
 ```
 
-## API Documentation
-
-### Base URL
-
-```
-http://localhost:3000/api
-```
-
-### Companies
-
-#### GET /api/companies
-List all companies.
-
-**Response:**
-```json
-[
-  {
-    "id": 1,
-    "name": "Apex Healthcare Group",
-    "industry": "Healthcare",
-    "size": "500-1000 employees",
-    "created_at": "2026-04-29T00:00:00.000Z"
-  }
-]
-```
-
-#### POST /api/companies
-Create a new company.
-
-**Request Body:**
-```json
-{
-  "name": "Company Name",
-  "industry": "Industry",
-  "size": "100-500 employees"
-}
-```
-
-### Employees
-
-#### GET /api/employees
-List all employees with their HR risks and assessments.
-
-**Response:**
-```json
-[
-  {
-    "id": 1,
-    "company_id": 1,
-    "name": "Robert Wilson",
-    "email": "rwilson@company.com",
-    "department": "Operations",
-    "position": "Front Desk Lead",
-    "role": "Staff",
-    "hire_date": "2022-03-15",
-    "hrRisk": {
-      "id": 1,
-      "employee_id": 1,
-      "turnover_risk": "High",
-      "motivation_level": 45,
-      "performance_score": 65,
-      "sick_days": 8,
-      "notes": "High burnout due to frequent double shifts..."
-    },
-    "clinicalAssessments": [...],
-    "interventions": [...]
-  }
-]
-```
-
-#### GET /api/employees/:id
-Get a specific employee with full details.
-
-#### POST /api/employees
-Create a new employee.
-
-**Request Body:**
-```json
-{
-  "company_id": 1,
-  "name": "John Doe",
-  "email": "jdoe@company.com",
-  "department": "Engineering",
-  "position": "Software Engineer",
-  "role": "Staff",
-  "hire_date": "2024-01-15"
-}
-```
-
-#### PUT /api/employees/:id
-Update an employee.
-
-### Clinical Assessments
-
-#### GET /api/clinical-assessments
-List all clinical assessments.
-
-#### POST /api/clinical-assessments
-Create a new clinical assessment.
-
-**Request Body:**
-```json
-{
-  "employee_id": 1,
-  "type": "MSK_SCREEN",
-  "data_json": {
-    "regions": [...],
-    "totalRiskScore": 72,
-    "riskLevel": "High"
-  },
-  "risk_score": 72,
-  "risk_level": "High"
-}
-```
-
-#### GET /api/clinical-assessments/:employeeId
-Get all assessments for a specific employee.
-
-### HR Risks
-
-#### GET /api/hr-risks
-List all HR risks with employee info.
-
-**Response:**
-```json
-[
-  {
-    "id": 1,
-    "employee_id": 1,
-    "turnover_risk": "High",
-    "motivation_level": 45,
-    "performance_score": 65,
-    "sick_days": 8,
-    "notes": "High burnout...",
-    "name": "Robert Wilson",
-    "department": "Operations"
-  }
-]
-```
-
-#### POST /api/hr-risks
-Create an HR risk entry for an employee.
-
-#### GET /api/hr-risks/:employeeId
-Get HR risk for a specific employee.
-
-#### PUT /api/hr-risks/:employeeId
-Update HR risk data.
-
-**Request Body:**
-```json
-{
-  "turnover_risk": "High",
-  "motivation_level": 55,
-  "performance_score": 70,
-  "sick_days": 5,
-  "notes": "Updated notes..."
-}
-```
-
-### Interventions
-
-#### GET /api/interventions
-List all interventions. Optional query params: `employee_id`, `status`.
-
-#### POST /api/interventions
-Create a new intervention.
-
-**Request Body:**
-```json
-{
-  "employee_id": 1,
-  "type": "wellness",
-  "description": "Ergonomic workstation assessment",
-  "status": "active"
-}
-```
-
-### Dashboard
-
-#### GET /api/dashboard/stats
-Get aggregate dashboard statistics.
-
-**Response:**
-```json
-{
-  "totalEmployees": 19,
-  "totalCompanies": 2,
-  "riskStats": {
-    "total": 19,
-    "highRisk": 4,
-    "avgMotivation": 62,
-    "avgPerformance": 74,
-    "totalSickDays": 62
-  },
-  "assessmentStats": {
-    "total": 4,
-    "avgRiskScore": 69,
-    "highRiskCount": 2
-  },
-  "interventionStats": {
-    "total": 5,
-    "active": 2,
-    "completed": 1,
-    "pending": 2
-  },
-  "departmentBreakdown": [
-    { "department": "Operations", "count": 5, "avgMotivation": 55 }
-  ]
-}
-```
-
-### Speech Analysis
-
-#### POST /api/analyze-speech
-Analyze text/speech content for sentiment and suggestions.
-
-**Request Body:**
-```json
-{
-  "text_context": "Employee feedback text here..."
-}
-```
-
-**Response:**
-```json
-{
-  "transcription": "The feedback text...",
-  "sentiment": "Negative",
-  "toneIndex": 35,
-  "keyThemes": ["Workload", "Burnout"],
-  "suggestedIntervention": "Consider scheduling a one-on-one to discuss workload management"
-}
-```
-
-### Email & SMS
-
-#### POST /api/send-email
-Send an email via Resend.
-
-**Request Body:**
-```json
-{
-  "to": "recipient@example.com",
-  "subject": "Subject Line",
-  "html": "<p>Email content...</p>"
-}
-```
-
-#### POST /api/send-sms
-Send an SMS via Twilio.
-
-**Request Body:**
-```json
-{
-  "to": "+1234567890",
-  "body": "SMS message content..."
-}
-```
-
-## Database Schema
-
-### companies
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key |
-| name | TEXT | Company name |
-| industry | TEXT | Industry sector |
-| size | TEXT | Company size |
-| created_at | TEXT | Creation timestamp |
-
-### employees
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key |
-| company_id | INTEGER | FK to companies |
-| name | TEXT | Employee name |
-| email | TEXT | Email (unique) |
-| department | TEXT | Department |
-| position | TEXT | Job position |
-| role | TEXT | System role |
-| hire_date | TEXT | Hire date |
-| created_at | TEXT | Creation timestamp |
-
-### clinical_assessments
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key |
-| employee_id | INTEGER | FK to employees |
-| type | TEXT | Assessment type |
-| data_json | TEXT | JSON assessment data |
-| risk_score | REAL | Calculated risk score |
-| risk_level | TEXT | Risk level |
-| created_at | TEXT | Creation timestamp |
-
-### hr_risks
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key |
-| employee_id | INTEGER | FK to employees (unique) |
-| turnover_risk | TEXT | Low/Medium/High/Critical |
-| motivation_level | INTEGER | 0-100 |
-| performance_score | INTEGER | 0-100 |
-| sick_days | INTEGER | Sick days count |
-| notes | TEXT | Risk notes |
-| updated_at | TEXT | Last update |
-
-### interventions
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key |
-| employee_id | INTEGER | FK to employees |
-| type | TEXT | Intervention type |
-| description | TEXT | Description |
-| status | TEXT | pending/active/completed |
-| created_at | TEXT | Creation timestamp |
-
-## Seed Data
-
-The database is automatically seeded with:
-- 2 companies (Apex Healthcare Group, Metro Sports & Wellness)
-- 19 employees across various departments
-- HR risk profiles for all employees
-- 4 clinical assessments (MSK and motion analysis)
-- 5 interventions
-
-## Deployment
-
-### Vercel (Recommended)
-
-1. Push to GitHub
-2. Import project in Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy
-
-**Note:** For Vercel deployment, the SQLite database runs in read-only mode. For production use with SQLite, consider deploying to a VPS or using a hosted database solution.
-
-### Docker
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-### VPS/Raspberry Pi
-
-```bash
-# Clone and install
-git clone <repo>
-cd Assessments-HHRR-MSK
-npm install
-
-# Set environment variables
-export GEMINI_API_KEY=your_key
-
-# Run in production
-NODE_ENV=production npm run dev
-```
-
-## Accessing the App
-
-1. Start the dev server: `npm run dev`
-2. Open http://localhost:3000
-3. Login as different roles:
-   - **HR**: Full access to HR dashboard and employee risk views
-   - **Admin**: Full system access
-   - **Management**: Limited view access
-   - **Staff**: Patient-facing features
-
-## Frontend API Integration
-
-All frontend components fetch data from the Express API on port 3000. The `DemoContext` provides:
-
-- `employees`: Array of all employees with risk profiles
-- `employeeRisks`: HR risk summaries for dashboard
-- `refreshEmployees()`: Reload employee data
-- `refreshEmployeeRisks()`: Reload HR risk data
-- `updateEmployeeRisk(id, data)`: Update risk via API
-
-### API Base URL
-
-```typescript
-const API_BASE = 'http://localhost:3000/api';
-```
-
-## Troubleshooting
-
-### Database Errors
-- Ensure the `data/` directory exists and is writable
-- Delete `data/app.db` to reset the database (will re-seed on restart)
-
-### API Connection Issues
-- Verify the Express server is running on port 3000
-- Check CORS settings if accessing from different origin
-
-### Gemini API Errors
-- Verify `GEMINI_API_KEY` is set correctly
-- Check API quota and billing status
+---
+
+## Target Market
+
+### Primary: Large Enterprises (500+ employees)
+- Multiple departments with department heads
+- Established HR protocols and standards
+- Workers compensation and OSHA requirements
+- Budget for wellness programs
+- High cost of absenteeism and turnover
+
+### Use Cases:
+1. **Manufacturing** — Physical demands, injury prevention, shift work fatigue
+2. **Healthcare** — Double shifts, burnout cycles, high turnover
+3. **Corporate/Tech** — Sedentary risks, mental health, engagement
+4. **Retail/Hospitality** — Schedule variability, physical demands, high turnover
+5. **Construction** — Safety compliance, physical assessment, injury tracking
+
+---
 
 ## License
 

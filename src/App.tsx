@@ -37,6 +37,22 @@ import { ComplianceReports } from './pages/admin/ComplianceReports';
 import { EnterpriseAudit } from './pages/admin/EnterpriseAudit';
 import { CompanyOverview } from './pages/CompanyOverview';
 
+// ─── Pages — HR Workforce Assessment (NEW) ──────
+import { WorkforceAssessment } from './pages/hr/WorkforceAssessment';
+import { QuestionnaireWizard } from './pages/hr/QuestionnaireWizard';
+import { CostCalculator } from './pages/hr/CostCalculator';
+import { DataImport } from './pages/hr/DataImport';
+import { DepartmentView } from './pages/hr/DepartmentView';
+import { ViciousCycleMapper } from './pages/hr/ViciousCycleMapper';
+
+// ─── Pages — Clinical Analysis (NEW) ────────────
+import { ClinicalDataAnalysis } from './pages/clinical/DataAnalysis';
+import { ErgonomicAssessment } from './pages/clinical/ErgonomicAssessment';
+
+// ─── Pages — HIPAA & Validated Instruments ───────
+import { HIPAADashboard } from './pages/admin/HIPAADashboard';
+import { ValidatedQuestionnaires } from './pages/hr/ValidatedQuestionnaires';
+
 // ─── Icons ───────────────────────────────────────
 import {
   Activity,
@@ -54,7 +70,9 @@ import {
   BrainCircuit,
   AlertTriangle,
   Building2,
-  Stethoscope
+  Stethoscope,
+  ClipboardList,
+  Database
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────
@@ -117,8 +135,9 @@ const Navigation = () => {
                   {isHR && (
                     <>
                       <NavLink to="/hr" icon={<Users className="w-4 h-4" />} label="HR & Risk" current={location.pathname} />
+                      <NavLink to="/hr/assessment" icon={<ClipboardList className="w-4 h-4" />} label="Workforce" current={location.pathname} />
                       <NavLink to="/clinical" icon={<HeartPulse className="w-4 h-4" />} label="Clinical" current={location.pathname} />
-                      <NavLink to="/clinical-assessment" icon={<Stethoscope className="w-4 h-4" />} label="Assessment" current={location.pathname} />
+                      <NavLink to="/clinical/analysis" icon={<Database className="w-4 h-4" />} label="Data Analysis" current={location.pathname} />
                     </>
                   )}
                   {isManagement && (
@@ -183,6 +202,22 @@ const AppRoutes = () => {
       <Route path="/scheduling" element={<></>} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/hr" element={<HRDashboard />} />
+
+      {/* ── HR Workforce Assessment Routes (NEW) ── */}
+      <Route path="/hr/assessment" element={<WorkforceAssessment />} />
+      <Route path="/hr/questionnaire/:type" element={<QuestionnaireWizard />} />
+      <Route path="/hr/cost-calculator" element={<CostCalculator />} />
+      <Route path="/hr/data-import" element={<DataImport />} />
+      <Route path="/hr/departments" element={<DepartmentView />} />
+      <Route path="/hr/vicious-cycle" element={<ViciousCycleMapper />} />
+
+      {/* ── Clinical Analysis Routes (NEW) ── */}
+      <Route path="/clinical/analysis" element={<ClinicalDataAnalysis />} />
+      <Route path="/clinical/ergonomic" element={<ErgonomicAssessment />} />
+
+      {/* ── Validated Questionnaires & HIPAA ── */}
+      <Route path="/hr/questionnaires" element={<ValidatedQuestionnaires />} />
+      <Route path="/hipaa" element={<HIPAADashboard />} />
 
       {/* ── Patient Assessment Routes ── */}
       {isPatient && (

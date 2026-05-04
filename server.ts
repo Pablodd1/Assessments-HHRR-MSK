@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import { createServer as createViteServer } from "vite";
 import { Resend } from "resend";
 import twilio from "twilio";
@@ -492,12 +493,22 @@ app.post("/api/send-sms", async (req, res) => {
 // Start server
 // ─────────────────────────────────────────
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV === "production") {
+    // Serve built static assets
+    const distPath = path.resolve(process.cwd(), "dist");
+    app.use(express.static(distPath));
+    // SPA fallback — all non-API routes serve index.html
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  } else {
+    // Development: Vite dev server with HMR
     const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
     app.use(vite.middlewares);
   }
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`[HR ASSESSMENT] Server running on http://localhost:${PORT}`);
+    console.log(`[HR ASSESSMENT] Mode: ${process.env.NODE_ENV || "development"}`);
     console.log(`[HR ASSESSMENT] Database: Supabase (vodhhauwowkalvaxzqyv)`);
   });
 }
